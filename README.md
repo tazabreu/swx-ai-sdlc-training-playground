@@ -272,17 +272,30 @@ GitHub Actions workflows automatically run on every pull request:
 
 ## 📚 Documentation
 
+### Core Documentation
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)**: Detailed system architecture and design patterns
 - **[CONTRIBUTING.md](./CONTRIBUTING.md)**: Contribution guidelines and development workflow
-- **[LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md)**: Complete API testing guide with examples
-- **[CLAUDE.md](./CLAUDE.md)**: AI coding agent guidelines
+- **[API.md](./API.md)**: Complete API reference documentation
 - **[DEPLOYMENT.md](./DEPLOYMENT.md)**: Deployment instructions and configurations
+- **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)**: Common issues and solutions
+
+### Development Guides
+- **[LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md)**: Complete API testing guide with curl examples
+- **[backend/README.md](./backend/README.md)**: Backend-specific documentation
+- **[frontend/README.md](./frontend/README.md)**: Frontend-specific documentation
+- **[CLAUDE.md](./CLAUDE.md)**: AI coding agent guidelines
+
+### Specifications
 - **[specs/](./specs/)**: Feature specifications and technical designs
+  - [001-headless-financial-api](./specs/001-headless-financial-api/)
+  - [002-whatsapp-admin-notifications](./specs/002-whatsapp-admin-notifications/)
+  - [003-streaming-and-observability](./specs/003-streaming-and-observability/)
+  - [004-aws-localstack-infrastructure](./specs/004-aws-localstack-infrastructure/)
 
 ### API Documentation
 
-- OpenAPI/Swagger specification: `specs/001-headless-financial-api/contracts/openapi.yaml`
-- View interactive API docs: Start the backend and visit `/api-docs` (when available)
+- **[API.md](./API.md)**: Complete REST API reference
+- **OpenAPI Specification**: `specs/001-headless-financial-api/contracts/openapi.yaml`
 
 ## 🤝 Contributing
 
