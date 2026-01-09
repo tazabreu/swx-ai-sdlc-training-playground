@@ -1,0 +1,27 @@
+{
+  "name": "tazco-financial-ecosystem",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "dev:backend": "bun run --filter @tazco/backend dev",
+    "dev:frontend": "bun run --filter @tazco/frontend dev",
+    "build": "bun run --filter '*' build",
+    "typecheck": "bun run --filter '*' typecheck",
+    "lint": "bun run --filter '*' lint",
+    "format": "bun run --filter '*' format",
+    "format:check": "bun run --filter '*' format:check",
+    "test": "bun run --filter @tazco/backend test",
+    "test:unit": "bun run --filter @tazco/backend test:unit",
+    "test:contract": "bun run --filter @tazco/backend test:contract",
+    "test:ci": "bun run --filter @tazco/backend test:ci"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.0",
+    "typescript": "5.5.4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

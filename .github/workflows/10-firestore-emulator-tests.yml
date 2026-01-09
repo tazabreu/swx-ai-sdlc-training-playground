@@ -1,0 +1,74 @@
+# Firestore Emulator Integration Tests (manual)
+# =============================================
+#
+# Spins up the Firebase emulators via docker-compose and runs the integration test suite
+# against Firestore/Auth locally.
+#
+# Usage:
+#   gh workflow run 10-firestore-emulator-tests.yml
+
+name: 10-firestore-emulator-tests
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firestore-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  firestore-emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.5
+
+      - name: Cache Bun install artifacts
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Start Firebase emulators
+        run: docker compose up -d
+        working-directory: backend
+
+      - name: Wait for emulator UI
+        run: |
+          echo "Waiting for Firebase emulator UI on http://localhost:4000 ..."
+          for i in $(seq 1 30); do
+            if curl -fsS "http://localhost:4000" >/dev/null; then
+              echo "Emulators are ready."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Timed out waiting for Firebase emulators."
+          docker compose ps
+          docker compose logs --no-color
+          exit 1
+        working-directory: backend
+
+      - name: Run integration tests (Firestore emulator)
+        run: bun run test:firestore
+        working-directory: backend
+
+      - name: Stop Firebase emulators
+        if: always()
+        run: docker compose down -v
+        working-directory: backend

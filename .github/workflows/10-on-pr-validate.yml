@@ -1,0 +1,381 @@
+# 10-on-pr-validate.yml
+# PR Validation with Intelligent Change Detection
+#
+# This workflow runs validation checks on pull requests with smart
+# change detection to only run relevant tests based on modified files.
+
+name: 10 - PR Validation
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_all:
+        description: 'Run all checks regardless of changes'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend_src: ${{ steps.filter.outputs.backend_src }}
+      backend_tests_unit: ${{ steps.filter.outputs.backend_tests_unit }}
+      backend_tests_integration: ${{ steps.filter.outputs.backend_tests_integration }}
+      backend_tests_contract: ${{ steps.filter.outputs.backend_tests_contract }}
+      firebase: ${{ steps.filter.outputs.firebase }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+      run_all: ${{ inputs.run_all || 'false' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend_src:
+              - 'backend/src/**'
+              - 'backend/package.json'
+              - 'backend/tsconfig.json'
+            backend_tests_unit:
+              - 'backend/tests/unit/**'
+            backend_tests_integration:
+              - 'backend/tests/integration/**'
+            backend_tests_contract:
+              - 'backend/tests/contract/**'
+            firebase:
+              - 'backend/firebase.json'
+              - 'backend/firestore.rules'
+              - 'backend/firestore.indexes.json'
+            frontend:
+              - 'frontend/**'
+            workflows:
+              - '.github/workflows/**'
+
+  lint-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    # Always run lint and typecheck (fast checks)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type check - Backend
+        run: bun run typecheck
+        working-directory: backend
+
+      - name: Lint - Backend
+        run: bun run lint
+        working-directory: backend
+
+      - name: Format check - Backend
+        run: bun run format:check
+        working-directory: backend
+
+      - name: Type check - Frontend
+        if: needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.run_all == 'true'
+        run: bun run typecheck
+        working-directory: frontend
+        continue-on-error: true
+
+      - name: Lint - Frontend
+        if: needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.run_all == 'true'
+        run: bun run lint
+        working-directory: frontend
+        continue-on-error: true
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: |
+      needs.detect-changes.outputs.run_all == 'true' ||
+      needs.detect-changes.outputs.backend_src == 'true' ||
+      needs.detect-changes.outputs.backend_tests_unit == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run unit tests
+        run: bun test tests/unit
+        working-directory: backend
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: |
+      needs.detect-changes.outputs.run_all == 'true' ||
+      needs.detect-changes.outputs.backend_src == 'true' ||
+      needs.detect-changes.outputs.backend_tests_integration == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Start Firestore Emulator
+        run: |
+          docker compose up -d
+          sleep 5  # Wait for emulator to start
+        working-directory: backend
+
+      - name: Run integration tests
+        run: bun run test:firestore
+        working-directory: backend
+        env:
+          FIRESTORE_EMULATOR_HOST: localhost:8080
+          GCLOUD_PROJECT: demo-tazco
+
+      - name: Stop emulator
+        if: always()
+        run: docker compose down
+        working-directory: backend
+
+  contract-tests:
+    name: Contract Tests
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: |
+      needs.detect-changes.outputs.run_all == 'true' ||
+      needs.detect-changes.outputs.backend_src == 'true' ||
+      needs.detect-changes.outputs.backend_tests_contract == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run contract tests
+        run: bun test tests/contract
+        working-directory: backend
+
+  firebase-validate:
+    name: Validate Firebase Config
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: |
+      needs.detect-changes.outputs.run_all == 'true' ||
+      needs.detect-changes.outputs.firebase == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate firebase.json syntax
+        run: |
+          if ! jq empty firebase.json 2>/dev/null; then
+            echo "firebase.json is not valid JSON"
+            exit 1
+          fi
+          echo "firebase.json is valid JSON"
+        working-directory: backend
+
+      - name: Validate firestore.indexes.json syntax
+        run: |
+          if ! jq empty firestore.indexes.json 2>/dev/null; then
+            echo "firestore.indexes.json is not valid JSON"
+            exit 1
+          fi
+          echo "firestore.indexes.json is valid JSON"
+        working-directory: backend
+
+      - name: Validate firestore.rules exists
+        run: |
+          if [ ! -f firestore.rules ]; then
+            echo "firestore.rules file not found"
+            exit 1
+          fi
+          echo "firestore.rules exists"
+        working-directory: backend
+
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: |
+      needs.detect-changes.outputs.run_all == 'true' ||
+      needs.detect-changes.outputs.frontend == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build frontend
+        run: bun run build
+        working-directory: frontend
+
+  summary:
+    name: PR Summary
+    runs-on: ubuntu-latest
+    needs: [detect-changes, lint-typecheck, unit-tests, integration-tests, contract-tests, firebase-validate, frontend-build]
+    if: always()
+
+    steps:
+      - name: Check job results
+        id: check
+        run: |
+          # Determine overall status
+          if [ "${{ needs.lint-typecheck.result }}" == "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "failed_job=lint-typecheck" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.unit-tests.result }}" == "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "failed_job=unit-tests" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.integration-tests.result }}" == "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "failed_job=integration-tests" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.contract-tests.result }}" == "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "failed_job=contract-tests" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.firebase-validate.result }}" == "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "failed_job=firebase-validate" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.frontend-build.result }}" == "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "failed_job=frontend-build" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "failed_job=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate Summary
+        run: |
+          echo "## PR Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Change detection
+          echo "### Changes Detected" >> $GITHUB_STEP_SUMMARY
+          echo "| Path | Changed |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| backend/src/ | ${{ needs.detect-changes.outputs.backend_src == 'true' && '✅' || '⏭️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| backend/tests/unit/ | ${{ needs.detect-changes.outputs.backend_tests_unit == 'true' && '✅' || '⏭️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| backend/tests/integration/ | ${{ needs.detect-changes.outputs.backend_tests_integration == 'true' && '✅' || '⏭️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| backend/tests/contract/ | ${{ needs.detect-changes.outputs.backend_tests_contract == 'true' && '✅' || '⏭️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| backend/firebase.json | ${{ needs.detect-changes.outputs.firebase == 'true' && '✅' || '⏭️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| frontend/ | ${{ needs.detect-changes.outputs.frontend == 'true' && '✅' || '⏭️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Job results
+          echo "### Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Lint & Type Check
+          if [ "${{ needs.lint-typecheck.result }}" == "success" ]; then
+            echo "| Lint & Type Check | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.lint-typecheck.result }}" == "failure" ]; then
+            echo "| Lint & Type Check | ❌ Fail |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Lint & Type Check | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Unit Tests
+          if [ "${{ needs.unit-tests.result }}" == "success" ]; then
+            echo "| Unit Tests | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.unit-tests.result }}" == "failure" ]; then
+            echo "| Unit Tests | ❌ Fail |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Unit Tests | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Integration Tests
+          if [ "${{ needs.integration-tests.result }}" == "success" ]; then
+            echo "| Integration Tests | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.integration-tests.result }}" == "failure" ]; then
+            echo "| Integration Tests | ❌ Fail |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Integration Tests | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Contract Tests
+          if [ "${{ needs.contract-tests.result }}" == "success" ]; then
+            echo "| Contract Tests | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.contract-tests.result }}" == "failure" ]; then
+            echo "| Contract Tests | ❌ Fail |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Contract Tests | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Firebase Validate
+          if [ "${{ needs.firebase-validate.result }}" == "success" ]; then
+            echo "| Firebase Validate | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.firebase-validate.result }}" == "failure" ]; then
+            echo "| Firebase Validate | ❌ Fail |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Firebase Validate | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Frontend Build
+          if [ "${{ needs.frontend-build.result }}" == "success" ]; then
+            echo "| Frontend Build | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.frontend-build.result }}" == "failure" ]; then
+            echo "| Frontend Build | ❌ Fail |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Frontend Build | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Overall status
+          if [ "${{ steps.check.outputs.status }}" == "success" ]; then
+            echo "### ✅ All checks passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Failed: ${{ steps.check.outputs.failed_job }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Fail if any check failed
+        if: steps.check.outputs.status == 'failure'
+        run: exit 1

@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'admin';
+    }
+
+    function isOwner(ecosystemId) {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(ecosystemId))
+        && get(/databases/$(database)/documents/users/$(ecosystemId)).data.firebaseUid == request.auth.uid;
+    }
+
+    function isOwnerOrAdmin(ecosystemId) {
+      return isOwner(ecosystemId) || isAdmin();
+    }
+
+    // Users collection
+    match /users/{ecosystemId} {
+      // Users can read their own data, admins can read any user
+      allow read: if isOwnerOrAdmin(ecosystemId);
+
+      // Only the system (via Admin SDK) can create/update users
+      allow write: if false;
+
+      // Cards subcollection
+      match /cards/{cardId} {
+        allow read: if isOwnerOrAdmin(ecosystemId);
+        allow write: if false;
+
+        // Transactions subcollection
+        match /transactions/{transactionId} {
+          allow read: if isOwnerOrAdmin(ecosystemId);
+          allow write: if false;
+        }
+      }
+
+      // Card requests subcollection
+      match /cardRequests/{requestId} {
+        allow read: if isOwnerOrAdmin(ecosystemId);
+        allow write: if false;
+      }
+
+      // Scores subcollection (score history)
+      match /scores/{scoreId} {
+        allow read: if isOwnerOrAdmin(ecosystemId);
+        allow write: if false;
+      }
+
+      // Idempotency keys subcollection
+      match /idempotencyKeys/{keyHash} {
+        // Only system access
+        allow read, write: if false;
+      }
+    }
+
+    // Outbox collection (system only)
+    match /outbox/{eventId} {
+      allow read, write: if false;
+    }
+
+    // Audit logs collection (admin read-only)
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Admin: Collection group queries for pending card requests
+    match /{path=**}/cardRequests/{requestId} {
+      allow read: if isAdmin() && resource.data.status == 'pending';
+    }
+  }
+}

@@ -1,0 +1,137 @@
+# 00-bootstrap.yml
+# Bootstrap Prerequisites Validation
+#
+# This workflow validates that all required GitHub variables and secrets
+# are configured before first deployment. Run manually when setting up
+# a new environment.
+
+name: 00 - Bootstrap Prerequisites
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to validate'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate-prerequisites:
+    name: Validate Prerequisites
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate GitHub Variables (dev)
+        if: inputs.environment == 'dev'
+        run: |
+          echo "Validating GitHub Variables for dev environment..."
+
+          MISSING_VARS=""
+
+          if [ -z "${{ vars.FIREBASE_PROJECT_DEV }}" ]; then
+            MISSING_VARS="${MISSING_VARS}\n  - FIREBASE_PROJECT_DEV"
+          fi
+
+          if [ -z "${{ vars.GCP_PROJECT_ID_DEV }}" ]; then
+            MISSING_VARS="${MISSING_VARS}\n  - GCP_PROJECT_ID_DEV"
+          fi
+
+          if [ -z "${{ vars.GCP_WIF_PROVIDER_DEV }}" ]; then
+            MISSING_VARS="${MISSING_VARS}\n  - GCP_WIF_PROVIDER_DEV"
+          fi
+
+          if [ -z "${{ vars.GCP_SA_EMAIL_DEV }}" ]; then
+            MISSING_VARS="${MISSING_VARS}\n  - GCP_SA_EMAIL_DEV"
+          fi
+
+          if [ -n "$MISSING_VARS" ]; then
+            echo ""
+            echo "===================================="
+            echo "MISSING REQUIRED VARIABLES"
+            echo "===================================="
+            echo -e "The following GitHub repository variables are not set:${MISSING_VARS}"
+            echo ""
+            echo "To configure these variables:"
+            echo "1. Go to Settings > Secrets and variables > Actions > Variables"
+            echo "2. Add each missing variable"
+            echo ""
+            echo "Required variables:"
+            echo "  - FIREBASE_PROJECT_DEV: Firebase project ID for dev"
+            echo "  - GCP_PROJECT_ID_DEV: GCP project ID (usually same as Firebase)"
+            echo "  - GCP_WIF_PROVIDER_DEV: Workload Identity Federation provider"
+            echo "  - GCP_SA_EMAIL_DEV: Service account email for deployment"
+            exit 1
+          fi
+
+          echo "All required variables are set!"
+
+      - name: Display Variable Values (masked)
+        if: inputs.environment == 'dev'
+        run: |
+          echo "Configured Variables (dev):"
+          echo "  FIREBASE_PROJECT_DEV: ${{ vars.FIREBASE_PROJECT_DEV }}"
+          echo "  GCP_PROJECT_ID_DEV: ${{ vars.GCP_PROJECT_ID_DEV }}"
+          echo "  GCP_WIF_PROVIDER_DEV: [set]"
+          echo "  GCP_SA_EMAIL_DEV: ${{ vars.GCP_SA_EMAIL_DEV }}"
+
+      - name: Test GCP Authentication (optional)
+        if: inputs.environment == 'dev' && vars.GCP_WIF_PROVIDER_DEV != ''
+        id: auth
+        continue-on-error: true
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER_DEV }}
+          service_account: ${{ vars.GCP_SA_EMAIL_DEV }}
+          token_format: access_token
+
+      - name: Authentication Test Result
+        if: inputs.environment == 'dev' && vars.GCP_WIF_PROVIDER_DEV != ''
+        run: |
+          if [ "${{ steps.auth.outcome }}" == "success" ]; then
+            echo "GCP Authentication: SUCCESS"
+            echo "Workload Identity Federation is correctly configured!"
+          else
+            echo "GCP Authentication: FAILED"
+            echo ""
+            echo "Workload Identity Federation may not be correctly configured."
+            echo "Please verify:"
+            echo "  1. The WIF provider exists in GCP"
+            echo "  2. The service account exists and has necessary permissions"
+            echo "  3. The GitHub repository is allowed in the WIF pool"
+            echo ""
+            echo "This is not blocking - authentication can be tested during deployment."
+          fi
+
+  summary:
+    name: Bootstrap Summary
+    runs-on: ubuntu-latest
+    needs: [validate-prerequisites]
+    if: always()
+
+    steps:
+      - name: Summary
+        run: |
+          echo "===================================="
+          echo "BOOTSTRAP SUMMARY"
+          echo "===================================="
+          echo ""
+          echo "Environment: ${{ inputs.environment }}"
+          echo "Prerequisites Check: ${{ needs.validate-prerequisites.result }}"
+          echo ""
+          if [ "${{ needs.validate-prerequisites.result }}" == "success" ]; then
+            echo "All prerequisites are configured!"
+            echo "You can now run the deploy workflow."
+          else
+            echo "Some prerequisites are missing."
+            echo "Please configure the missing variables and run again."
+          fi

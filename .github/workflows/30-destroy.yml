@@ -1,0 +1,155 @@
+# 30-destroy.yml
+# Safe Teardown of Firebase Resources
+#
+# Removes deployed Firebase Functions with safety confirmation.
+# Note: Firestore data is NOT deleted - only functions are removed.
+
+name: 30 - Destroy Firebase Resources
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+      confirmation:
+        description: 'Type DESTROY to confirm deletion'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate-confirmation:
+    name: Validate Confirmation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check confirmation
+        run: |
+          if [ "${{ inputs.confirmation }}" != "DESTROY" ]; then
+            echo "===================================="
+            echo "CONFIRMATION REQUIRED"
+            echo "===================================="
+            echo ""
+            echo "To destroy resources, you must type 'DESTROY' exactly."
+            echo "You entered: '${{ inputs.confirmation }}'"
+            echo ""
+            echo "This is a safety measure to prevent accidental deletion."
+            exit 1
+          fi
+
+          echo "Confirmation received: DESTROY"
+          echo "Proceeding with resource deletion..."
+
+      - name: Warning
+        run: |
+          echo "===================================="
+          echo "WARNING: DESTRUCTIVE OPERATION"
+          echo "===================================="
+          echo ""
+          echo "This will DELETE the following resources:"
+          echo "  - Firebase Functions in ${{ inputs.environment }} environment"
+          echo ""
+          echo "The following will be PRESERVED:"
+          echo "  - Firestore data"
+          echo "  - Firestore rules (in source control)"
+          echo "  - Firestore indexes (in source control)"
+          echo ""
+          echo "Environment: ${{ inputs.environment }}"
+          echo "Project: ${{ vars.FIREBASE_PROJECT_DEV }}"
+          echo ""
+          echo "Proceeding in 5 seconds..."
+          sleep 5
+
+  delete-functions:
+    name: Delete Firebase Functions
+    runs-on: ubuntu-latest
+    needs: [validate-confirmation]
+    environment:
+      name: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER_DEV }}
+          service_account: ${{ vars.GCP_SA_EMAIL_DEV }}
+          token_format: access_token
+
+      - name: Setup Node.js (for Firebase CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: List Functions to Delete
+        run: |
+          echo "Listing deployed functions..."
+          firebase functions:list \
+            --project ${{ vars.FIREBASE_PROJECT_DEV }} \
+            2>/dev/null || echo "No functions found or unable to list"
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+
+      - name: Delete All Functions
+        run: |
+          echo "Deleting all functions..."
+
+          # Delete all functions in the project
+          # Using --force to skip confirmation prompts
+          firebase functions:delete \
+            --project ${{ vars.FIREBASE_PROJECT_DEV }} \
+            --force \
+            || echo "No functions to delete or deletion complete"
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+
+  summary:
+    name: Destruction Summary
+    runs-on: ubuntu-latest
+    needs: [delete-functions]
+    if: always()
+
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## Destruction Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.delete-functions.result }}" == "success" ]; then
+            echo "### ✅ Resources Deleted" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⚠️ Deletion may have failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Project | ${{ vars.FIREBASE_PROJECT_DEV }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deleted By | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Timestamp | $(date -u +"%Y-%m-%d %H:%M:%S UTC") |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deleted Resources" >> $GITHUB_STEP_SUMMARY
+          echo "- Firebase Functions" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Preserved Resources" >> $GITHUB_STEP_SUMMARY
+          echo "- Firestore data (not deleted)" >> $GITHUB_STEP_SUMMARY
+          echo "- Firestore rules (source controlled)" >> $GITHUB_STEP_SUMMARY
+          echo "- Firestore indexes (source controlled)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### To Redeploy" >> $GITHUB_STEP_SUMMARY
+          echo "Run the '20 - Deploy to Firebase' workflow to redeploy functions." >> $GITHUB_STEP_SUMMARY

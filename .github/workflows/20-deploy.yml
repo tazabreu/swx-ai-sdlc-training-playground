@@ -1,0 +1,103 @@
+# 20-deploy.yml
+# Deploy to Firebase Functions
+#
+# Uses the golden Firebase deploy workflow from tazco-platform.
+# Deploys functions, Firestore rules, and indexes to Firebase.
+# Runs on push to main or manual trigger.
+
+name: 20 - Deploy to Firebase
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+      skip_tests:
+        description: 'Skip tests before deployment'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_tests }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type check
+        run: bun run typecheck
+        working-directory: backend
+
+      - name: Lint
+        run: bun run lint
+        working-directory: backend
+
+      - name: Run unit tests
+        run: bun test tests/unit
+        working-directory: backend
+
+      - name: Build
+        run: bun run build
+        working-directory: backend
+
+  deploy-firebase:
+    name: Deploy to Firebase
+    needs: [build-and-test]
+    if: ${{ always() && (needs.build-and-test.result == 'success' || inputs.skip_tests) }}
+    uses: tazco/tazco-platform-speckit-platform-robustification/.github/workflows/99-golden-firebase-deploy.yml@main
+    with:
+      firebase_project_id: ${{ vars.FIREBASE_PROJECT_DEV }}
+      deploy_targets: "functions,firestore:rules,firestore:indexes"
+      working_directory: "backend"
+      node_version: "20"
+    secrets:
+      gcp_wif_provider: ${{ vars.GCP_WIF_PROVIDER_DEV }}
+      gcp_sa_email: ${{ vars.GCP_SA_EMAIL_DEV }}
+
+  deployment-summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [deploy-firebase]
+    if: always()
+
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ inputs.environment || 'dev' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Project | ${{ vars.FIREBASE_PROJECT_DEV }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployed By | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Timestamp | $(date -u +"%Y-%m-%d %H:%M:%S UTC") |" >> $GITHUB_STEP_SUMMARY
+          echo "| Golden Workflow Status | ${{ needs.deploy-firebase.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployed Components" >> $GITHUB_STEP_SUMMARY
+          echo "- Firebase Functions" >> $GITHUB_STEP_SUMMARY
+          echo "- Firestore Rules" >> $GITHUB_STEP_SUMMARY
+          echo "- Firestore Indexes" >> $GITHUB_STEP_SUMMARY

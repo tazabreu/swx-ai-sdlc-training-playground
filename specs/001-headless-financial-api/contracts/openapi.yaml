@@ -1,0 +1,1351 @@
+openapi: 3.1.0
+info:
+  title: Tazco Financial API
+  description: |
+    Headless financial backend service for credit card management, user scoring,
+    and payment simulation. All state changes are published to a message stream
+    for downstream consumers.
+  version: 1.0.0
+  contact:
+    name: Tazco Platform Team
+
+servers:
+  - url: https://{region}-{project}.cloudfunctions.net/api
+    description: Firebase Functions (Production)
+    variables:
+      region:
+        default: us-central1
+      project:
+        default: tazco-financial
+  - url: http://localhost:5001/{project}/{region}/api
+    description: Firebase Emulator (Development)
+    variables:
+      region:
+        default: us-central1
+      project:
+        default: tazco-financial
+
+tags:
+  - name: Health
+    description: System health and observability
+  - name: Dashboard
+    description: User financial overview
+  - name: Cards
+    description: Credit card management
+  - name: Transactions
+    description: Purchases and payments
+  - name: Admin
+    description: Administrative operations (requires admin role)
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ============================================================================
+  # HEALTH ENDPOINTS
+  # ============================================================================
+  /health/liveness:
+    get:
+      tags: [Health]
+      summary: Liveness probe
+      description: Returns 200 if the service process is alive.
+      operationId: getLiveness
+      security: []
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /health/readiness:
+    get:
+      tags: [Health]
+      summary: Readiness probe
+      description: Returns 200 if all dependencies are healthy, 503 otherwise.
+      operationId: getReadiness
+      security: []
+      responses:
+        '200':
+          description: All dependencies healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '503':
+          description: One or more dependencies unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+
+  # ============================================================================
+  # DASHBOARD
+  # ============================================================================
+  /v1/dashboard:
+    get:
+      tags: [Dashboard]
+      summary: Get user dashboard
+      description: |
+        Returns the authenticated user's financial summary including:
+        - Current score and tier
+        - Active cards with balances
+        - Pending card requests
+        - Suggested actions for new users
+      operationId: getDashboard
+      parameters:
+        - $ref: '#/components/parameters/IfNoneMatch'
+        - $ref: '#/components/parameters/IfModifiedSince'
+      responses:
+        '200':
+          description: Dashboard data
+          headers:
+            ETag:
+              schema:
+                type: string
+              description: Entity tag for cache validation
+            Last-Modified:
+              schema:
+                type: string
+                format: date-time
+              description: Last modification timestamp
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+        '304':
+          description: Not modified (cache valid)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Service unavailable (stale data returned)
+          headers:
+            X-Stale-Data:
+              schema:
+                type: boolean
+              description: Indicates stale cached data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+
+  # ============================================================================
+  # PRODUCT OFFERS
+  # ============================================================================
+  /v1/offers:
+    get:
+      tags: [Dashboard]
+      summary: Get personalized product offers
+      description: |
+        Returns product offers tailored to the user's profile:
+        - Credit card offers based on score tier
+        - Terms and limits appropriate to creditworthiness
+        - Cooldown indicators for recently rejected users
+      operationId: getOffers
+      responses:
+        '200':
+          description: Available offers
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OffersResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ============================================================================
+  # CARDS
+  # ============================================================================
+  /v1/cards:
+    get:
+      tags: [Cards]
+      summary: List user's cards
+      description: Returns all cards owned by the authenticated user.
+      operationId: listCards
+      parameters:
+        - name: type
+          in: query
+          description: Filter by card type
+          schema:
+            type: string
+            enum: [credit-card]
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+            enum: [active, suspended, cancelled]
+      responses:
+        '200':
+          description: List of cards
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardsListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/cards/{cardId}:
+    get:
+      tags: [Cards]
+      summary: Get card details
+      description: Returns detailed information about a specific card.
+      operationId: getCard
+      parameters:
+        - $ref: '#/components/parameters/CardId'
+      responses:
+        '200':
+          description: Card details
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/cards/requests:
+    post:
+      tags: [Cards]
+      summary: Request a new card
+      description: |
+        Submit a credit card application. Decision based on user's score:
+        - Score >= 700: Auto-approved with $10,000 limit
+        - Score 500-699: Auto-approved with $5,000 limit
+        - Score < 500: Pending admin review
+      operationId: requestCard
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardRequestInput'
+      responses:
+        '201':
+          description: Card request created (may be approved or pending)
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardRequestResponse'
+        '200':
+          description: Card request already processed (idempotent replay)
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardRequestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Conflict (existing pending request or active card)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: CARD_REQUEST_EXISTS
+                  message: You already have a pending card request
+                  details:
+                    existingRequestId: req_abc123
+
+  /v1/cards/requests/{requestId}:
+    get:
+      tags: [Cards]
+      summary: Get card request status
+      description: Returns current status and decision (if any) for a card request.
+      operationId: getCardRequest
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Card request details
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardRequestResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================================================
+  # TRANSACTIONS
+  # ============================================================================
+  /v1/cards/{cardId}/transactions/purchases:
+    post:
+      tags: [Transactions]
+      summary: Simulate a purchase
+      description: |
+        Record a purchase on the specified card.
+        Fails if amount exceeds available credit.
+      operationId: createPurchase
+      parameters:
+        - $ref: '#/components/parameters/CardId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseInput'
+      responses:
+        '201':
+          description: Purchase recorded
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '402':
+          description: Insufficient credit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: INSUFFICIENT_CREDIT
+                  message: Purchase amount exceeds available credit
+                  details:
+                    requestedAmount: 1500.00
+                    availableCredit: 1000.00
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Card status changed during processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/cards/{cardId}/transactions/payments:
+    post:
+      tags: [Transactions]
+      summary: Make a payment
+      description: |
+        Record a payment on the specified card.
+        On-time payments increase score (+10 to +50).
+        Late payments decrease score (-20 to -100).
+      operationId: createPayment
+      parameters:
+        - $ref: '#/components/parameters/CardId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentInput'
+      responses:
+        '201':
+          description: Payment recorded
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Invalid payment (exceeds balance or zero balance)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Concurrent payment in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/cards/{cardId}/transactions:
+    get:
+      tags: [Transactions]
+      summary: List card transactions
+      description: Returns paginated list of purchases and payments for a card.
+      operationId: listTransactions
+      parameters:
+        - $ref: '#/components/parameters/CardId'
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [purchase, payment]
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Transaction list
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionsListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================================================
+  # ADMIN ENDPOINTS
+  # ============================================================================
+  /v1/admin/users/{userSlug}/score:
+    get:
+      tags: [Admin]
+      summary: Get user score details
+      description: Returns user's current score, tier, and score history.
+      operationId: getAdminUserScore
+      parameters:
+        - $ref: '#/components/parameters/UserSlug'
+      responses:
+        '200':
+          description: Score details
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminScoreResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Admin]
+      summary: Adjust user score
+      description: Manually adjust a user's score with required reason.
+      operationId: updateAdminUserScore
+      parameters:
+        - $ref: '#/components/parameters/UserSlug'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScoreAdjustmentInput'
+      responses:
+        '200':
+          description: Score updated
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminScoreResponse'
+        '400':
+          description: Invalid score value (must be 0-1000)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/admin/card-requests:
+    get:
+      tags: [Admin]
+      summary: List pending card requests
+      description: Returns paginated list of pending card requests for admin review.
+      operationId: listAdminCardRequests
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+            default: pending
+        - name: sort
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [oldest, newest]
+            default: oldest
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Card requests list
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCardRequestsListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/admin/card-requests/{requestId}/approve:
+    post:
+      tags: [Admin]
+      summary: Approve card request
+      description: Approve a pending card request with specified credit limit.
+      operationId: approveCardRequest
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardApprovalInput'
+      responses:
+        '200':
+          description: Request approved
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCardRequestResponse'
+        '400':
+          description: Limit exceeds tier policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Request already processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/admin/card-requests/{requestId}/reject:
+    post:
+      tags: [Admin]
+      summary: Reject card request
+      description: Reject a pending card request with reason.
+      operationId: rejectCardRequest
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardRejectionInput'
+      responses:
+        '200':
+          description: Request rejected
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCardRequestResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Request already processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/admin/cleanup:
+    post:
+      tags: [Admin]
+      summary: Reset system data
+      description: |
+        Delete all users, cards, and transactions.
+        Requires double confirmation via token.
+      operationId: cleanupSystem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CleanupInput'
+      responses:
+        '200':
+          description: Cleanup completed
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/X-Request-ID'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CleanupResponse'
+        '400':
+          description: Confirmation token required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CleanupConfirmationRequired'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Cleanup already in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  # ============================================================================
+  # SECURITY SCHEMES
+  # ============================================================================
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase Authentication JWT token
+
+  # ============================================================================
+  # PARAMETERS
+  # ============================================================================
+  parameters:
+    CardId:
+      name: cardId
+      in: path
+      required: true
+      description: Card identifier
+      schema:
+        type: string
+
+    UserSlug:
+      name: userSlug
+      in: path
+      required: true
+      description: User's ecosystemId
+      schema:
+        type: string
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-generated unique key for request deduplication (valid 24h)
+      schema:
+        type: string
+        maxLength: 64
+
+    IfNoneMatch:
+      name: If-None-Match
+      in: header
+      description: ETag value for cache validation
+      schema:
+        type: string
+
+    IfModifiedSince:
+      name: If-Modified-Since
+      in: header
+      description: Timestamp for cache validation
+      schema:
+        type: string
+        format: date-time
+
+    Cursor:
+      name: cursor
+      in: query
+      description: Pagination cursor from previous response
+      schema:
+        type: string
+
+    Limit:
+      name: limit
+      in: query
+      description: Number of items per page (default 20, max 100)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  # ============================================================================
+  # HEADERS
+  # ============================================================================
+  headers:
+    X-Request-ID:
+      description: Unique request identifier for tracing
+      schema:
+        type: string
+        format: uuid
+
+  # ============================================================================
+  # RESPONSES
+  # ============================================================================
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Missing or invalid authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            token_expired:
+              value:
+                error:
+                  code: TOKEN_EXPIRED
+                  message: Authentication token has expired
+            invalid_token:
+              value:
+                error:
+                  code: INVALID_TOKEN
+                  message: Authentication token is invalid
+            account_disabled:
+              value:
+                error:
+                  code: ACCOUNT_DISABLED
+                  message: Account has been disabled
+
+    Forbidden:
+      description: Insufficient permissions (admin required)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================================
+  # SCHEMAS
+  # ============================================================================
+  schemas:
+    # --------------------------------------------------------------------------
+    # Common
+    # --------------------------------------------------------------------------
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable error message
+            details:
+              type: object
+              additionalProperties: true
+              description: Additional error context
+
+    PaginationMeta:
+      type: object
+      properties:
+        nextCursor:
+          type: string
+          nullable: true
+          description: Cursor for next page (null if no more pages)
+        hasMore:
+          type: boolean
+        totalCount:
+          type: integer
+          description: Total items (may be approximate for large datasets)
+
+    # --------------------------------------------------------------------------
+    # Health
+    # --------------------------------------------------------------------------
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        timestamp:
+          type: string
+          format: date-time
+
+    ReadinessResponse:
+      type: object
+      required: [status, dependencies]
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        dependencies:
+          type: object
+          properties:
+            database:
+              type: string
+              enum: [healthy, unhealthy]
+            message_stream:
+              type: string
+              enum: [healthy, unhealthy]
+            auth_provider:
+              type: string
+              enum: [healthy, unhealthy]
+        warnings:
+          type: array
+          items:
+            type: string
+
+    # --------------------------------------------------------------------------
+    # Dashboard
+    # --------------------------------------------------------------------------
+    DashboardResponse:
+      type: object
+      required: [user, cards, pendingRequests]
+      properties:
+        user:
+          type: object
+          required: [ecosystemId, score, tier, status]
+          properties:
+            ecosystemId:
+              type: string
+            email:
+              type: string
+              format: email
+            score:
+              type: integer
+              minimum: 0
+              maximum: 1000
+            tier:
+              type: string
+              enum: [high, medium, low]
+            status:
+              type: string
+              enum: [active, disabled]
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardSummary'
+        pendingRequests:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardRequestSummary'
+        suggestedActions:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              message:
+                type: string
+              link:
+                type: string
+        lastUpdated:
+          type: string
+          format: date-time
+
+    CardSummary:
+      type: object
+      required: [cardId, type, status, limit, balance, availableCredit]
+      properties:
+        cardId:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+          enum: [active, suspended, cancelled]
+        limit:
+          type: number
+          format: double
+        balance:
+          type: number
+          format: double
+        availableCredit:
+          type: number
+          format: double
+        minimumPayment:
+          type: number
+          format: double
+        nextDueDate:
+          type: string
+          format: date-time
+        nearLimit:
+          type: boolean
+          description: True if utilization > 90%
+
+    CardRequestSummary:
+      type: object
+      required: [requestId, productId, status, submittedAt]
+      properties:
+        requestId:
+          type: string
+        productId:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        submittedAt:
+          type: string
+          format: date-time
+        estimatedReviewTime:
+          type: string
+          description: Human-readable estimate
+
+    # --------------------------------------------------------------------------
+    # Offers
+    # --------------------------------------------------------------------------
+    OffersResponse:
+      type: object
+      required: [offers]
+      properties:
+        offers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductOffer'
+
+    ProductOffer:
+      type: object
+      required: [productId, productType, name, terms]
+      properties:
+        productId:
+          type: string
+        productType:
+          type: string
+          enum: [credit-card]
+        name:
+          type: string
+        description:
+          type: string
+        terms:
+          type: object
+          properties:
+            creditLimit:
+              type: number
+            apr:
+              type: number
+            annualFee:
+              type: number
+        eligibility:
+          type: object
+          properties:
+            eligible:
+              type: boolean
+            subjectToApproval:
+              type: boolean
+            cooldownUntil:
+              type: string
+              format: date-time
+              nullable: true
+              description: Date when user can apply again (if recently rejected)
+
+    # --------------------------------------------------------------------------
+    # Cards
+    # --------------------------------------------------------------------------
+    CardsListResponse:
+      type: object
+      required: [cards]
+      properties:
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardSummary'
+        suggestion:
+          type: string
+          description: Suggestion if no cards exist
+
+    CardResponse:
+      type: object
+      required: [card]
+      properties:
+        card:
+          $ref: '#/components/schemas/CardDetail'
+
+    CardDetail:
+      allOf:
+        - $ref: '#/components/schemas/CardSummary'
+        - type: object
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+            activatedAt:
+              type: string
+              format: date-time
+            approvedBy:
+              type: string
+              enum: [auto, admin]
+            scoreAtApproval:
+              type: integer
+
+    CardRequestInput:
+      type: object
+      required: [productId]
+      properties:
+        productId:
+          type: string
+          description: Product identifier (e.g., 'standard-credit-card')
+
+    CardRequestResponse:
+      type: object
+      required: [request]
+      properties:
+        request:
+          type: object
+          required: [requestId, status, scoreAtRequest]
+          properties:
+            requestId:
+              type: string
+            status:
+              type: string
+              enum: [pending, approved, rejected]
+            scoreAtRequest:
+              type: integer
+            decision:
+              type: object
+              properties:
+                outcome:
+                  type: string
+                  enum: [approved, rejected]
+                source:
+                  type: string
+                  enum: [auto, admin]
+                approvedLimit:
+                  type: number
+                reason:
+                  type: string
+            card:
+              $ref: '#/components/schemas/CardSummary'
+              description: Included if approved
+
+    # --------------------------------------------------------------------------
+    # Transactions
+    # --------------------------------------------------------------------------
+    PurchaseInput:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+          format: double
+          minimum: 0.01
+        merchant:
+          type: string
+          maxLength: 100
+
+    PaymentInput:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+          format: double
+          minimum: 0.01
+
+    TransactionResponse:
+      type: object
+      required: [transaction]
+      properties:
+        transaction:
+          $ref: '#/components/schemas/Transaction'
+        card:
+          $ref: '#/components/schemas/CardSummary'
+          description: Updated card state
+
+    PaymentResponse:
+      allOf:
+        - $ref: '#/components/schemas/TransactionResponse'
+        - type: object
+          properties:
+            scoreImpact:
+              type: object
+              properties:
+                previousScore:
+                  type: integer
+                newScore:
+                  type: integer
+                delta:
+                  type: integer
+                reason:
+                  type: string
+                  enum: [on_time, late]
+
+    Transaction:
+      type: object
+      required: [transactionId, type, amount, status, timestamp]
+      properties:
+        transactionId:
+          type: string
+        type:
+          type: string
+          enum: [purchase, payment]
+        amount:
+          type: number
+          format: double
+        merchant:
+          type: string
+        status:
+          type: string
+          enum: [completed, failed]
+        timestamp:
+          type: string
+          format: date-time
+        paymentStatus:
+          type: string
+          enum: [on_time, late]
+        scoreImpact:
+          type: integer
+
+    TransactionsListResponse:
+      type: object
+      required: [transactions, pagination]
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    # --------------------------------------------------------------------------
+    # Admin
+    # --------------------------------------------------------------------------
+    AdminScoreResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: object
+          required: [ecosystemId, currentScore, tier]
+          properties:
+            ecosystemId:
+              type: string
+            email:
+              type: string
+            currentScore:
+              type: integer
+            tier:
+              type: string
+              enum: [high, medium, low]
+        history:
+          type: array
+          maxItems: 10
+          items:
+            type: object
+            properties:
+              value:
+                type: integer
+              previousValue:
+                type: integer
+              delta:
+                type: integer
+              reason:
+                type: string
+              source:
+                type: string
+                enum: [system, admin]
+              timestamp:
+                type: string
+                format: date-time
+
+    ScoreAdjustmentInput:
+      type: object
+      required: [score, reason]
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 1000
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 500
+
+    AdminCardRequestsListResponse:
+      type: object
+      required: [requests, pagination]
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminCardRequest'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    AdminCardRequest:
+      type: object
+      required: [requestId, user, scoreAtRequest, currentScore, daysPending, productId, status]
+      properties:
+        requestId:
+          type: string
+        user:
+          type: object
+          properties:
+            ecosystemId:
+              type: string
+            email:
+              type: string
+        scoreAtRequest:
+          type: integer
+        currentScore:
+          type: integer
+        tierAtRequest:
+          type: string
+          enum: [high, medium, low]
+        daysPending:
+          type: integer
+        requiresAttention:
+          type: boolean
+          description: True if pending > 7 days
+        productId:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminCardRequestResponse:
+      type: object
+      required: [request]
+      properties:
+        request:
+          $ref: '#/components/schemas/AdminCardRequest'
+        card:
+          $ref: '#/components/schemas/CardSummary'
+          description: Included if approved
+
+    CardApprovalInput:
+      type: object
+      required: [creditLimit]
+      properties:
+        creditLimit:
+          type: number
+          minimum: 100
+          maximum: 10000
+
+    CardRejectionInput:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 500
+
+    CleanupInput:
+      type: object
+      properties:
+        confirmationToken:
+          type: string
+          description: Token from previous 400 response
+
+    CleanupConfirmationRequired:
+      type: object
+      required: [message, confirmationToken]
+      properties:
+        message:
+          type: string
+          example: Confirmation required. Include the token in your next request.
+        confirmationToken:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    CleanupResponse:
+      type: object
+      required: [status, deletedCounts]
+      properties:
+        status:
+          type: string
+          enum: [completed]
+        deletedCounts:
+          type: object
+          properties:
+            users:
+              type: integer
+            cards:
+              type: integer
+            transactions:
+              type: integer
+            cardRequests:
+              type: integer
+            events:
+              type: integer
+        duration:
+          type: string
+          description: Cleanup duration (e.g., "45s")

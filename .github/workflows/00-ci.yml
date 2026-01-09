@@ -1,0 +1,58 @@
+name: 00-ci
+
+# This workflow runs on pushes to main only.
+# PR validation is handled by 10-on-pr-validate.yml with intelligent change detection.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.5
+
+      - name: Cache Bun install artifacts
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Format (check) - Backend
+        run: bun run format:check
+        working-directory: backend
+
+      - name: Typecheck - Backend
+        run: bun run typecheck
+        working-directory: backend
+
+      - name: Lint - Backend
+        run: bun run lint
+        working-directory: backend
+
+      - name: Test - Backend
+        run: bun run test:ci
+        working-directory: backend
