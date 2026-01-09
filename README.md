@@ -272,6 +272,8 @@ GitHub Actions workflows automatically run on every pull request:
 
 ## 📚 Documentation
 
+**[📖 Documentation Index](./DOCS_INDEX.md)** - Complete guide to all documentation
+
 ### Core Documentation
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)**: Detailed system architecture and design patterns
 - **[CONTRIBUTING.md](./CONTRIBUTING.md)**: Contribution guidelines and development workflow
