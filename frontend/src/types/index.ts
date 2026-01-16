@@ -16,6 +16,7 @@ export interface Card {
   minimumPayment: number;
   nearLimit?: boolean;
   nextDueDate?: string;
+  cancelledAt?: string; // ISO timestamp when card was cancelled
 }
 
 export interface CardRequest {

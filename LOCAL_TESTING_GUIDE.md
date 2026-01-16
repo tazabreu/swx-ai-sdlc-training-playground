@@ -105,6 +105,13 @@ curl -X POST http://localhost:3000/v1/cards/$CARD_ID/transactions/payments \
 # Transaction history
 curl http://localhost:3000/v1/cards/$CARD_ID/transactions \
   -H "Authorization: Bearer $USER_TOKEN" | jq .
+
+# Cancel card
+curl -X POST http://localhost:3000/v1/cards/$CARD_ID/cancel \
+  -H "Authorization: Bearer $USER_TOKEN" \
+  -H "Idempotency-Key: cancel-$(date +%s)" \
+  -H "Content-Type: application/json" \
+  -d '{}' | jq .
 ```
 
 ## Admin Flow
@@ -350,6 +357,7 @@ bun run test:aws
 | `/v1/cards/requests` | POST | Request new card |
 | `/v1/cards` | GET | List cards |
 | `/v1/cards/:id` | GET | Card details |
+| `/v1/cards/:id/cancel` | POST | Cancel card |
 | `/v1/cards/:id/transactions/purchases` | POST | Purchase |
 | `/v1/cards/:id/transactions/payments` | POST | Payment |
 | `/v1/cards/:id/transactions` | GET | Transactions |

@@ -1,6 +1,6 @@
 # Research: AWS LocalStack Infrastructure
 
-**Feature**: 004-aws-localstack-infrastructure
+**Feature**: 002-aws-localstack-infrastructure
 **Date**: 2026-01-07
 **Purpose**: Document technology decisions, patterns, and alternatives for AWS infrastructure implementation
 

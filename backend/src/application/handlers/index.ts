@@ -27,6 +27,13 @@ export {
 } from './make-payment.handler.js';
 
 export {
+  handleCancelCard,
+  type CancelCardResult,
+  type CancelCardDependencies,
+  CancelCardError,
+} from './cancel-card.handler.js';
+
+export {
   handleAdminApproveCard,
   type AdminApproveCardResult,
   type AdminApproveCardHandlerDeps,

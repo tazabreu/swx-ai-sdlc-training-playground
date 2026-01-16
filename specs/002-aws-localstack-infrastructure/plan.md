@@ -1,7 +1,7 @@
 # Implementation Plan: AWS LocalStack Infrastructure
 
-**Branch**: `004-aws-localstack-infrastructure` | **Date**: 2026-01-07 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `/specs/004-aws-localstack-infrastructure/spec.md`
+**Branch**: `002-aws-localstack-infrastructure` | **Date**: 2026-01-07 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `/specs/002-aws-localstack-infrastructure/spec.md`
 
 ## Summary
 
@@ -95,7 +95,7 @@ This is the minimum “design surface area” that should be explicitly mapped b
 ### Documentation (this feature)
 
 ```text
-specs/004-aws-localstack-infrastructure/
+specs/002-aws-localstack-infrastructure/
 ├── plan.md              # This file
 ├── research.md          # Phase 0: Technology decisions and patterns
 ├── data-model.md        # Phase 1: DynamoDB table schemas and GSIs

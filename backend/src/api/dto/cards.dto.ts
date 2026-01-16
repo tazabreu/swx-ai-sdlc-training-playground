@@ -25,6 +25,7 @@ export interface CardSummaryDTO {
 export interface CardDetailDTO extends CardSummaryDTO {
   createdAt: string;
   activatedAt?: string | undefined;
+  cancelledAt?: string | undefined;
   approvedBy: 'auto' | 'admin';
   scoreAtApproval: number;
 }
@@ -72,4 +73,12 @@ export interface CardRequestResponse {
     decision?: CardRequestDecisionDTO;
     card?: CardSummaryDTO;
   };
+}
+
+/**
+ * Cancel card response
+ */
+export interface CancelCardResponse {
+  card: CardDetailDTO;
+  alreadyCancelled?: boolean;
 }

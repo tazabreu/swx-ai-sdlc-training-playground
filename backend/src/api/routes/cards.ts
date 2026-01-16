@@ -12,12 +12,14 @@ import type { IUserRepository } from '../../infrastructure/persistence/interface
 import type { ICardRepository } from '../../infrastructure/persistence/interfaces/card.repository.js';
 import type { ICardRequestRepository } from '../../infrastructure/persistence/interfaces/card-request.repository.js';
 import type { IIdempotencyRepository } from '../../infrastructure/persistence/interfaces/idempotency.repository.js';
+import type { IAuditLogRepository } from '../../infrastructure/persistence/interfaces/audit-log.repository.js';
 import type { IOutboxRepository } from '../../infrastructure/persistence/interfaces/outbox.repository.js';
 import type {
   CardsListResponse,
   CardResponse,
   CardRequestInput,
   CardRequestResponse,
+  CancelCardResponse,
   CardSummaryDTO,
   CardDetailDTO,
 } from '../dto/cards.dto.js';
@@ -29,6 +31,11 @@ import {
   handleRequestCard,
   RequestCardError,
 } from '../../application/handlers/request-card.handler.js';
+import { createCancelCardCommand } from '../../application/commands/cancel-card.command.js';
+import {
+  handleCancelCard,
+  CancelCardError,
+} from '../../application/handlers/cancel-card.handler.js';
 
 /**
  * Map card to summary DTO
@@ -73,6 +80,7 @@ function cardToDetailDTO(card: {
   nextDueDate?: Date | undefined;
   createdAt: Date;
   activatedAt?: Date | undefined;
+  cancelledAt?: Date | undefined;
   approvedBy: 'auto' | 'admin';
   scoreAtApproval: number;
 }): CardDetailDTO {
@@ -84,6 +92,9 @@ function cardToDetailDTO(card: {
   };
   if (card.activatedAt !== undefined) {
     result.activatedAt = card.activatedAt.toISOString();
+  }
+  if (card.cancelledAt !== undefined) {
+    result.cancelledAt = card.cancelledAt.toISOString();
   }
   return result;
 }
@@ -359,6 +370,106 @@ export function createCardsRouter(container: Container): Router {
 
         res.json(response);
       } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  /**
+   * POST /v1/cards/:cardId/cancel
+   * Cancel a credit card (soft-delete)
+   */
+  router.post(
+    '/:cardId/cancel',
+    authMiddleware,
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      try {
+        const ecosystemId = req.ecosystemId;
+        if (ecosystemId === undefined) {
+          throw Errors.unauthorized();
+        }
+
+        const cardId = req.params.cardId;
+        if (cardId === undefined) {
+          throw Errors.badRequest('cardId parameter is required');
+        }
+
+        // Get idempotency key
+        const idempotencyKey = req.headers['idempotency-key'] as string | undefined;
+        if (idempotencyKey === undefined) {
+          throw Errors.badRequest('Idempotency-Key header is required');
+        }
+
+        const cardRepo = container.resolve<ICardRepository>(ServiceNames.CardRepository);
+        const idempotencyRepo = container.resolve<IIdempotencyRepository>(
+          ServiceNames.IdempotencyRepository
+        );
+        const auditLogRepo = container.resolve<IAuditLogRepository>(
+          ServiceNames.AuditLogRepository
+        );
+        const outboxRepo = container.resolve<IOutboxRepository>(ServiceNames.OutboxRepository);
+
+        // Generate request ID for audit trail
+        const requestId = `cancel-${cardId}-${Date.now()}`;
+
+        const command = createCancelCardCommand(
+          ecosystemId,
+          cardId,
+          idempotencyKey,
+          ecosystemId, // Actor is the card owner
+          requestId
+        );
+
+        const result = await handleCancelCard(command, {
+          cardRepository: cardRepo,
+          idempotencyRepository: idempotencyRepo,
+          auditLogRepository: auditLogRepo,
+          outboxRepository: outboxRepo,
+        });
+
+        // Get updated card to return full details
+        const card = await cardRepo.findById(ecosystemId, cardId);
+        if (card === null) {
+          throw Errors.notFound('Card', cardId);
+        }
+
+        const response: CancelCardResponse = {
+          card: cardToDetailDTO(card),
+        };
+
+        if (result.alreadyCancelled) {
+          response.alreadyCancelled = true;
+        }
+
+        res.json(response);
+      } catch (error) {
+        if (error instanceof CancelCardError) {
+          if (error.code === 'NOT_FOUND') {
+            next(Errors.notFound('Card', req.params.cardId ?? 'unknown'));
+            return;
+          }
+          if (error.code === 'UNAUTHORIZED') {
+            next(Errors.forbidden(error.message));
+            return;
+          }
+          if (error.code === 'ALREADY_CANCELLED') {
+            // Return 200 with alreadyCancelled flag (idempotent success)
+            const cardRepo = container.resolve<ICardRepository>(ServiceNames.CardRepository);
+            const card = await cardRepo.findById(req.ecosystemId ?? '', req.params.cardId ?? '');
+            if (card !== null) {
+              const response: CancelCardResponse = {
+                card: cardToDetailDTO(card),
+                alreadyCancelled: true,
+              };
+              res.json(response);
+              return;
+            }
+          }
+          if (error.code === 'INVALID_TRANSITION') {
+            next(Errors.badRequest(error.message));
+            return;
+          }
+        }
         next(error);
       }
     }

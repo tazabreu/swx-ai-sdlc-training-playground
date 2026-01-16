@@ -1,6 +1,6 @@
 # API Contracts: AWS LocalStack Infrastructure
 
-**Feature**: 004-aws-localstack-infrastructure
+**Feature**: 002-aws-localstack-infrastructure
 **Date**: 2026-01-07
 
 ## Contract Status: No Changes
