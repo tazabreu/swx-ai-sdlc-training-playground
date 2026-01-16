@@ -1,6 +1,6 @@
 # Tasks: AWS LocalStack Infrastructure
 
-**Input**: `specs/004-aws-localstack-infrastructure/spec.md` + `specs/004-aws-localstack-infrastructure/plan.md`
+**Input**: `specs/002-aws-localstack-infrastructure/spec.md` + `specs/002-aws-localstack-infrastructure/plan.md`
 **Baseline contracts**: `specs/001-headless-financial-api/contracts/openapi.yaml` (validated by `tests/contract`)
 **Tooling note**: Use Bun for installs and scripts (e.g., `bun install`, `bun run dev:aws`, `bun test`).
 
@@ -24,7 +24,7 @@
 - [X] T002 Update `package.json` scripts: `dev:aws`, `emulator:start:aws`, `emulator:stop:aws`, `emulator:logs:aws`, `emulator:reset:aws`, `test:aws`.
 - [X] T003 [P] Add `docker-compose.aws.yml` with LocalStack (port 4566; enable: dynamodb, cognito-idp, events, sqs, ssm).
 - [X] T004 [P] Add `scripts/localstack-init/01-create-resources.sh` to create DynamoDB tables + GSIs required by repository access patterns.
-- [X] T005 Update `specs/004-aws-localstack-infrastructure/quickstart.md` so smoke checks use `GET /health/liveness` and a minimal flow (`POST /v1/users` → `GET /v1/dashboard`), and remove/replace any non-existent scripts.
+- [X] T005 Update `specs/002-aws-localstack-infrastructure/quickstart.md` so smoke checks use `GET /health/liveness` and a minimal flow (`POST /v1/users` → `GET /v1/dashboard`), and remove/replace any non-existent scripts.
 
 **Checkpoint**: `bun run emulator:start:aws && bun run dev:aws` and `curl http://localhost:3000/health/liveness`.
 
@@ -89,4 +89,4 @@
 ## Phase 6: Documentation
 
 - [X] T031 Update `README.md` and `CLAUDE.md` with AWS mode commands and expectations.
-- [X] T032 Ensure `specs/004-aws-localstack-infrastructure/data-model.md` matches current domain entities + repository access patterns (remove any fields/statuses that don’t exist in code today).
+- [X] T032 Ensure `specs/002-aws-localstack-infrastructure/data-model.md` matches current domain entities + repository access patterns (remove any fields/statuses that don’t exist in code today).

@@ -1,6 +1,6 @@
 # Data Model: AWS LocalStack Infrastructure (Aligned to Current Code)
 
-**Feature**: 004-aws-localstack-infrastructure
+**Feature**: 002-aws-localstack-infrastructure
 **Date**: 2026-01-07
 **Purpose**: DynamoDB table schemas + GSIs to satisfy the existing repository interfaces without changing domain/application code.
 

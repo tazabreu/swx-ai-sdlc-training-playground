@@ -29,6 +29,11 @@ export {
 } from './admin-approve-card.command.js';
 
 export {
+  type CancelCardCommand,
+  createCancelCardCommand,
+} from './cancel-card.command.js';
+
+export {
   type AdminRejectCardCommand,
   createAdminRejectCardCommand,
   validateAdminRejectCardCommand,

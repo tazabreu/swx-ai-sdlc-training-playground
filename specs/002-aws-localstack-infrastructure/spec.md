@@ -1,8 +1,8 @@
 # Feature Specification: AWS LocalStack Infrastructure
 
-**Feature Branch**: `004-aws-localstack-infrastructure`
+**Feature Branch**: `002-aws-localstack-infrastructure`
 **Created**: 2026-01-07
-**Status**: Draft
+**Status**: Implemented (LocalStack runnable; contract parity enforced)
 **Input**: User description: "Add alternate AWS infrastructure (DynamoDB, Cognito, EventBridge/SQS, SSM Parameter Store) alongside existing GCP/Firebase, with LocalStack for local development via `bun run dev:aws`"
 
 ## Baseline (Current Code)

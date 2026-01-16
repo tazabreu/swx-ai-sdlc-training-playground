@@ -2,7 +2,7 @@
 
 **Feature Branch**: `001-headless-financial-api`  
 **Created**: 2026-01-03  
-**Status**: Draft (Robustified)  
+**Status**: Implemented (core API) / Spec contains non-implemented acceptance scenarios  
 **Input**: User description: "Headless financial backend service with Firebase authentication, credit card management, user scoring, admin controls, event-driven architecture via message streaming, and comprehensive test coverage"
 
 ## Overview
@@ -14,6 +14,14 @@ A backend-only financial service enabling users to authenticate, view their fina
 - **Eventual Consistency**: Events are guaranteed to be delivered via outbox pattern with at-least-once semantics
 - **Fail-Safe Defaults**: System fails closed (denies) on authentication/authorization errors
 - **Graceful Degradation**: Core operations continue even when non-critical dependencies are unavailable
+
+## Implementation Notes (Repo Truth)
+
+As of 2026-01-14, the repository implementation differs from some scenarios in this document:
+
+- The API does **not** provide a "login" endpoint that returns tokens. Local development uses **mock tokens** (`mock.<base64>.sig`) and/or emulator-generated tokens (see `LOCAL_TESTING_GUIDE.md`).
+- A Next.js frontend exists in `frontend/` (this spec remains focused on the backend API).
+- Streaming (Kafka/Redpanda), BigQuery analytics, and OpenTelemetry are intentionally **not implemented** yet; they remain future work.
 
 ## Scope Guardrails
 

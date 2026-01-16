@@ -173,6 +173,15 @@ export const api = {
         token,
         idempotencyKey: generateIdempotencyKey('payment'),
       }),
+
+    // Cancel card
+    cancel: (cardId: string, token: string) =>
+      apiClient<{ card: Card }>(`/v1/cards/${cardId}/cancel`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+        token,
+        idempotencyKey: generateIdempotencyKey('cancel'),
+      }),
   },
 
   // Admin endpoints
