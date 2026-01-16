@@ -1,13 +1,13 @@
 openapi: 3.1.0
 info:
-  title: Tazco Financial API
+  title: ACME Financial API
   description: |
     Headless financial backend service for credit card management, user scoring,
     and payment simulation. All state changes are published to a message stream
     for downstream consumers.
   version: 1.0.0
   contact:
-    name: Tazco Platform Team
+    name: ACME Platform Team
 
 servers:
   - url: https://{region}-{project}.cloudfunctions.net/api
@@ -16,14 +16,14 @@ servers:
       region:
         default: us-central1
       project:
-        default: tazco-financial
+        default: acme-financial
   - url: http://localhost:5001/{project}/{region}/api
     description: Firebase Emulator (Development)
     variables:
       region:
         default: us-central1
       project:
-        default: tazco-financial
+        default: acme-financial
 
 tags:
   - name: Health

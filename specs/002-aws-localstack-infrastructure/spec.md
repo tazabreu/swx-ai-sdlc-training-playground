@@ -116,7 +116,7 @@ A developer wants to switch between Firebase mode and AWS mode without code chan
 - **Cognito User Pool**: User authentication pool with custom attributes for role and ecosystemId
 - **EventBridge Event Bus**: Central event routing for domain events
 - **SQS Queue**: Reliable message delivery for event consumers
-- **SSM Parameters**: Configuration values under /tazco/financial-api/ path
+- **SSM Parameters**: Configuration values under /acme/financial-api/ path
 
 ## Success Criteria *(mandatory)*
 

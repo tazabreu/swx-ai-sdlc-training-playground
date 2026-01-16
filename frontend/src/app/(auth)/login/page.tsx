@@ -32,7 +32,7 @@ export default function LoginPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
               <CreditCard className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">Tazco Financial</h1>
+            <h1 className="text-2xl font-bold">ACME Financial</h1>
             <p className="text-sm text-muted-foreground">Development Mode - Choose a role</p>
           </div>
 

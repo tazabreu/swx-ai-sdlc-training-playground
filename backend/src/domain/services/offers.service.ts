@@ -154,11 +154,11 @@ function generateCreditCardOffer(
 function getCreditCardName(tier: UserTier): string {
   switch (tier) {
     case 'high':
-      return 'Tazco Premium Rewards Card';
+      return 'ACME Premium Rewards Card';
     case 'medium':
-      return 'Tazco Standard Card';
+      return 'ACME Standard Card';
     case 'low':
-      return 'Tazco Starter Card';
+      return 'ACME Starter Card';
   }
 }
 

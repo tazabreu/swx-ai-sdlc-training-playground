@@ -48,9 +48,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize from local storage on mount to prevent hydration mismatch
   useEffect(() => {
-    const storedUser = localStorage.getItem('tazco_user');
-    const storedToken = localStorage.getItem('tazco_token');
-    const storedRegistered = localStorage.getItem('tazco_registered') === 'true';
+    const storedUser = localStorage.getItem('acme_user');
+    const storedToken = localStorage.getItem('acme_token');
+    const storedRegistered = localStorage.getItem('acme_registered') === 'true';
 
     if (storedUser) {
       try {
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const payload = JSON.parse(atob(payloadEncoded)) as { email?: string };
               if (payload.email === undefined || payload.email.trim().length === 0) {
                 const regenerated = getAuthTokenForUser(parsedUser);
-                localStorage.setItem('tazco_token', regenerated);
+                localStorage.setItem('acme_token', regenerated);
                 setToken(regenerated);
               }
             } catch {
@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .create(token)
       .then(() => {
         setIsRegistered(true);
-        localStorage.setItem('tazco_registered', 'true');
+        localStorage.setItem('acme_registered', 'true');
       })
       .catch(() => {
         // Keep isRegistered=false; pages are gated on registration to avoid cascading errors.
@@ -114,15 +114,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(newUser);
     setToken(newToken);
     setIsRegistered(false);
-    localStorage.setItem('tazco_user', JSON.stringify(newUser));
-    localStorage.setItem('tazco_token', newToken);
-    localStorage.setItem(`tazco_dev_email_${role}`, newUser.email);
-    localStorage.removeItem('tazco_registered');
+    localStorage.setItem('acme_user', JSON.stringify(newUser));
+    localStorage.setItem('acme_token', newToken);
+    localStorage.setItem(`acme_dev_email_${role}`, newUser.email);
+    localStorage.removeItem('acme_registered');
   };
 
   const actAs = (role: UserRole) => {
     const storedRoleEmail =
-      typeof window !== 'undefined' ? localStorage.getItem(`tazco_dev_email_${role}`) : null;
+      typeof window !== 'undefined' ? localStorage.getItem(`acme_dev_email_${role}`) : null;
 
     const email = storedRoleEmail || getDefaultEmailForRole(role);
     login(email, role);
@@ -137,16 +137,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setToken(null);
     setIsRegistered(false);
-    localStorage.removeItem('tazco_user');
-    localStorage.removeItem('tazco_token');
-    localStorage.removeItem('tazco_registered');
+    localStorage.removeItem('acme_user');
+    localStorage.removeItem('acme_token');
+    localStorage.removeItem('acme_registered');
   };
 
   const registerUser = async () => {
     if (!token) return;
     await api.users.create(token);
     setIsRegistered(true);
-    localStorage.setItem('tazco_registered', 'true');
+    localStorage.setItem('acme_registered', 'true');
   };
 
   return (

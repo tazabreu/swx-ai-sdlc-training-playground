@@ -204,7 +204,7 @@ LocalStack provides local AWS services (DynamoDB, Cognito, EventBridge, SQS, SSM
 ```bash
 bun run emulator:start:aws
 # Wait ~30 seconds for initialization
-docker ps  # Should show tazco-localstack as healthy
+docker ps  # Should show acme-localstack as healthy
 ```
 
 ### Start Server in AWS Mode
@@ -259,28 +259,28 @@ AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test \
 
 # Scan a table (e.g., users)
 AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test \
-  aws dynamodb scan --table-name tazco-users \
+  aws dynamodb scan --table-name acme-users \
   --endpoint-url http://localhost:4566 --region us-east-1
 
 # Query specific user
 AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test \
-  aws dynamodb get-item --table-name tazco-users \
+  aws dynamodb get-item --table-name acme-users \
   --key '{"ecosystemId": {"S": "user-001"}}' \
   --endpoint-url http://localhost:4566 --region us-east-1
 
 # View cards
 AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test \
-  aws dynamodb scan --table-name tazco-cards \
+  aws dynamodb scan --table-name acme-cards \
   --endpoint-url http://localhost:4566 --region us-east-1
 
 # View transactions
 AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test \
-  aws dynamodb scan --table-name tazco-transactions \
+  aws dynamodb scan --table-name acme-transactions \
   --endpoint-url http://localhost:4566 --region us-east-1
 
 # Check SQS queue for events
 AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test \
-  aws sqs receive-message --queue-url http://localhost:4566/000000000000/tazco-events-queue \
+  aws sqs receive-message --queue-url http://localhost:4566/000000000000/acme-events-queue \
   --endpoint-url http://localhost:4566 --region us-east-1
 ```
 

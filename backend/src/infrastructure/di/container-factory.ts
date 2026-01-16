@@ -303,7 +303,7 @@ export function createProductionContainer(config?: ContainerConfig): Container {
  */
 export function createEmulatorContainer(): Container {
   const host = process.env.FIRESTORE_EMULATOR_HOST ?? 'localhost:8080';
-  const projectId = process.env.GCLOUD_PROJECT ?? 'demo-tazco';
+  const projectId = process.env.GCLOUD_PROJECT ?? 'demo-acme';
 
   return createProductionContainer({
     firestoreEmulatorHost: host,

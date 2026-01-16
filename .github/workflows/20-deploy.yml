@@ -1,7 +1,7 @@
 # 20-deploy.yml
 # Deploy to Firebase Functions
 #
-# Uses the golden Firebase deploy workflow from tazco-platform.
+# Uses the golden Firebase deploy workflow from acme-platform.
 # Deploys functions, Firestore rules, and indexes to Firebase.
 # Runs on push to main or manual trigger.
 
@@ -67,7 +67,7 @@ jobs:
     name: Deploy to Firebase
     needs: [build-and-test]
     if: ${{ always() && (needs.build-and-test.result == 'success' || inputs.skip_tests) }}
-    uses: tazco/tazco-platform-speckit-platform-robustification/.github/workflows/99-golden-firebase-deploy.yml@main
+    uses: acme/acme-platform-speckit-platform-robustification/.github/workflows/99-golden-firebase-deploy.yml@main
     with:
       firebase_project_id: ${{ vars.FIREBASE_PROJECT_DEV }}
       deploy_targets: "functions,firestore:rules,firestore:indexes"

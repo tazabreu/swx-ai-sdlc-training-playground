@@ -19,7 +19,7 @@ import { DEFAULT_CONFIG } from './remote-config.defaults.js';
 export interface SSMConfigServiceOptions {
   region?: string | undefined;
   endpoint?: string | undefined; // LocalStack endpoint override
-  basePath?: string | undefined; // default: /tazco/financial-api
+  basePath?: string | undefined; // default: /acme/financial-api
 }
 
 export type RemoteConfigPatch = {
@@ -70,7 +70,7 @@ export class SSMConfigService {
   private readonly basePath: string;
 
   constructor(options: SSMConfigServiceOptions = {}) {
-    this.basePath = options.basePath ?? '/tazco/financial-api';
+    this.basePath = options.basePath ?? '/acme/financial-api';
     this.client = new SSMClient(buildAwsClientConfig(options));
   }
 

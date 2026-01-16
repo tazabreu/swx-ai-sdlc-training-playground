@@ -1,5 +1,5 @@
 {
-  "name": "@tazco/frontend",
+  "name": "@acme/frontend",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -37,9 +37,11 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bun": "latest",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "bun-types": "1.3.6",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",

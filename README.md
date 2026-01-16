@@ -1,4 +1,4 @@
-# tazco-sample-financial-ecosystem-product
+# acme-sample-financial-ecosystem-product
 
 Headless Financial API (Cards-domain) for testing and verification: credit scoring, card requests/approvals, and purchase/payment simulation.
 

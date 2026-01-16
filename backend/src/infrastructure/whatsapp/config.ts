@@ -64,7 +64,7 @@ export function loadWhatsAppConfig(): WhatsAppConfig {
   const config: WhatsAppConfig = {
     wppBaseUrl: process.env.WPP_BASE_URL ?? '',
     wppSecretKey: process.env.WPP_SECRET_KEY ?? '',
-    wppSessionName: process.env.WPP_SESSION_NAME ?? 'tazco-financial-api',
+    wppSessionName: process.env.WPP_SESSION_NAME ?? 'acme-financial-api',
     adminPhone1: process.env.ADMIN_PHONE_1 ?? '',
     adminPhone2: process.env.ADMIN_PHONE_2 ?? '',
     webhookSecret: process.env.WEBHOOK_SECRET ?? '',

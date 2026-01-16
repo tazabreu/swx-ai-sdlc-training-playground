@@ -187,7 +187,7 @@ class FirestoreUserRepository implements IUserRepository { ... }
 
 ### 2. EcosystemId for Customer360
 
-Every user has a stable `ecosystemId` that persists across all Tazco products:
+Every user has a stable `ecosystemId` that persists across all ACME products:
 
 ```typescript
 interface User {

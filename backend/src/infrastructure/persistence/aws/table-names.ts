@@ -8,18 +8,18 @@
  * DynamoDB table name constants
  */
 export const TableNames = {
-  USERS: 'tazco-users',
-  SCORES: 'tazco-scores',
-  CARDS: 'tazco-cards',
-  CARD_REQUESTS: 'tazco-card-requests',
-  TRANSACTIONS: 'tazco-transactions',
-  IDEMPOTENCY: 'tazco-idempotency',
-  OUTBOX: 'tazco-outbox',
-  OUTBOX_SEQUENCES: 'tazco-outbox-sequences',
-  AUDIT_LOGS: 'tazco-audit-logs',
-  WHATSAPP_NOTIFICATIONS: 'tazco-whatsapp-notifications',
-  WHATSAPP_INBOUND: 'tazco-whatsapp-inbound',
-  PENDING_APPROVALS: 'tazco-pending-approvals',
+  USERS: 'acme-users',
+  SCORES: 'acme-scores',
+  CARDS: 'acme-cards',
+  CARD_REQUESTS: 'acme-card-requests',
+  TRANSACTIONS: 'acme-transactions',
+  IDEMPOTENCY: 'acme-idempotency',
+  OUTBOX: 'acme-outbox',
+  OUTBOX_SEQUENCES: 'acme-outbox-sequences',
+  AUDIT_LOGS: 'acme-audit-logs',
+  WHATSAPP_NOTIFICATIONS: 'acme-whatsapp-notifications',
+  WHATSAPP_INBOUND: 'acme-whatsapp-inbound',
+  PENDING_APPROVALS: 'acme-pending-approvals',
 } as const;
 
 /**

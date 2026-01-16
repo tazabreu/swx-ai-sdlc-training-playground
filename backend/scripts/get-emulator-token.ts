@@ -9,14 +9,14 @@
  *
  * Requires:
  *   FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
- *   GCLOUD_PROJECT=demo-tazco
+ *   GCLOUD_PROJECT=demo-acme
  */
 
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth, type Auth, type UserRecord } from 'firebase-admin/auth';
 
 const EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? 'localhost:9099';
-const PROJECT_ID = process.env.GCLOUD_PROJECT ?? 'demo-tazco';
+const PROJECT_ID = process.env.GCLOUD_PROJECT ?? 'demo-acme';
 
 // Ensure Firebase Admin SDK uses the emulator (must be set before initialization)
 process.env.FIREBASE_AUTH_EMULATOR_HOST = EMULATOR_HOST;

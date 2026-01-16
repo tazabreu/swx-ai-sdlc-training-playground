@@ -12,11 +12,11 @@ REGION="us-east-1"
 
 echo "=== Creating DynamoDB Tables ==="
 
-# 1. tazco-users
+# 1. acme-users
 aws dynamodb create-table \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --table-name tazco-users \
+  --table-name acme-users \
   --attribute-definitions \
     AttributeName=ecosystemId,AttributeType=S \
     AttributeName=firebaseUid,AttributeType=S \
@@ -27,13 +27,13 @@ aws dynamodb create-table \
     "Projection": {"ProjectionType": "ALL"}
   }]' \
   --billing-mode PAY_PER_REQUEST \
- || echo "Table tazco-users may already exist"
+ || echo "Table acme-users may already exist"
 
-# 2. tazco-scores
+# 2. acme-scores
 aws dynamodb create-table \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --table-name tazco-scores \
+  --table-name acme-scores \
   --attribute-definitions \
     AttributeName=ecosystemId,AttributeType=S \
     AttributeName=timestampScoreId,AttributeType=S \
@@ -41,13 +41,13 @@ aws dynamodb create-table \
     AttributeName=ecosystemId,KeyType=HASH \
     AttributeName=timestampScoreId,KeyType=RANGE \
   --billing-mode PAY_PER_REQUEST \
- || echo "Table tazco-scores may already exist"
+ || echo "Table acme-scores may already exist"
 
-# 3. tazco-cards
+# 3. acme-cards
 aws dynamodb create-table \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --table-name tazco-cards \
+  --table-name acme-cards \
   --attribute-definitions \
     AttributeName=ecosystemId,AttributeType=S \
     AttributeName=cardId,AttributeType=S \
@@ -64,13 +64,13 @@ aws dynamodb create-table \
     "Projection": {"ProjectionType": "ALL"}
   }]' \
   --billing-mode PAY_PER_REQUEST \
- || echo "Table tazco-cards may already exist"
+ || echo "Table acme-cards may already exist"
 
-# 4. tazco-card-requests
+# 4. acme-card-requests
 aws dynamodb create-table \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --table-name tazco-card-requests \
+  --table-name acme-card-requests \
   --attribute-definitions \
     AttributeName=ecosystemId,AttributeType=S \
     AttributeName=requestId,AttributeType=S \
@@ -90,13 +90,13 @@ aws dynamodb create-table \
     }
   ]' \
   --billing-mode PAY_PER_REQUEST \
- || echo "Table tazco-card-requests may already exist"
+ || echo "Table acme-card-requests may already exist"
 
-# 5. tazco-transactions
+# 5. acme-transactions
 aws dynamodb create-table \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --table-name tazco-transactions \
+  --table-name acme-transactions \
   --attribute-definitions \
     AttributeName=ecosystemIdCardId,AttributeType=S \
     AttributeName=transactionId,AttributeType=S \
@@ -104,13 +104,13 @@ aws dynamodb create-table \
     AttributeName=ecosystemIdCardId,KeyType=HASH \
     AttributeName=transactionId,KeyType=RANGE \
   --billing-mode PAY_PER_REQUEST \
- || echo "Table tazco-transactions may already exist"
+ || echo "Table acme-transactions may already exist"
 
-# 6. tazco-idempotency (with TTL)
+# 6. acme-idempotency (with TTL)
 aws dynamodb create-table \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --table-name tazco-idempotency \
+  --table-name acme-idempotency \
   --attribute-definitions \
     AttributeName=ecosystemId,AttributeType=S \
     AttributeName=keyHash,AttributeType=S \
@@ -118,21 +118,21 @@ aws dynamodb create-table \
     AttributeName=ecosystemId,KeyType=HASH \
     AttributeName=keyHash,KeyType=RANGE \
   --billing-mode PAY_PER_REQUEST \
- || echo "Table tazco-idempotency may already exist"
+ || echo "Table acme-idempotency may already exist"
 
 # Enable TTL on idempotency table
 aws dynamodb update-time-to-live \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --table-name tazco-idempotency \
+  --table-name acme-idempotency \
   --time-to-live-specification Enabled=true,AttributeName=expiresAt \
  || echo "TTL may already be configured"
 
-# 7. tazco-outbox
+# 7. acme-outbox
 aws dynamodb create-table \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --table-name tazco-outbox \
+  --table-name acme-outbox \
   --attribute-definitions \
     AttributeName=eventId,AttributeType=S \
     AttributeName=status,AttributeType=S \
@@ -158,24 +158,24 @@ aws dynamodb create-table \
     }
   ]' \
   --billing-mode PAY_PER_REQUEST \
- || echo "Table tazco-outbox may already exist"
+ || echo "Table acme-outbox may already exist"
 
-# 8. tazco-outbox-sequences
+# 8. acme-outbox-sequences
 aws dynamodb create-table \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --table-name tazco-outbox-sequences \
+  --table-name acme-outbox-sequences \
   --attribute-definitions \
     AttributeName=entityKey,AttributeType=S \
   --key-schema AttributeName=entityKey,KeyType=HASH \
   --billing-mode PAY_PER_REQUEST \
- || echo "Table tazco-outbox-sequences may already exist"
+ || echo "Table acme-outbox-sequences may already exist"
 
-# 9. tazco-audit-logs
+# 9. acme-audit-logs
 aws dynamodb create-table \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --table-name tazco-audit-logs \
+  --table-name acme-audit-logs \
   --attribute-definitions \
     AttributeName=targetTypeTargetId,AttributeType=S \
     AttributeName=timestampLogId,AttributeType=S \
@@ -193,13 +193,13 @@ aws dynamodb create-table \
     "Projection": {"ProjectionType": "ALL"}
   }]' \
   --billing-mode PAY_PER_REQUEST \
- || echo "Table tazco-audit-logs may already exist"
+ || echo "Table acme-audit-logs may already exist"
 
-# 10. tazco-whatsapp-notifications
+# 10. acme-whatsapp-notifications
 aws dynamodb create-table \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --table-name tazco-whatsapp-notifications \
+  --table-name acme-whatsapp-notifications \
   --attribute-definitions \
     AttributeName=notificationId,AttributeType=S \
     AttributeName=status,AttributeType=S \
@@ -226,13 +226,13 @@ aws dynamodb create-table \
     }
   ]' \
   --billing-mode PAY_PER_REQUEST \
- || echo "Table tazco-whatsapp-notifications may already exist"
+ || echo "Table acme-whatsapp-notifications may already exist"
 
-# 11. tazco-whatsapp-inbound
+# 11. acme-whatsapp-inbound
 aws dynamodb create-table \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --table-name tazco-whatsapp-inbound \
+  --table-name acme-whatsapp-inbound \
   --attribute-definitions \
     AttributeName=messageId,AttributeType=S \
     AttributeName=wppMessageId,AttributeType=S \
@@ -257,13 +257,13 @@ aws dynamodb create-table \
     }
   ]' \
   --billing-mode PAY_PER_REQUEST \
- || echo "Table tazco-whatsapp-inbound may already exist"
+ || echo "Table acme-whatsapp-inbound may already exist"
 
-# 12. tazco-pending-approvals
+# 12. acme-pending-approvals
 aws dynamodb create-table \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --table-name tazco-pending-approvals \
+  --table-name acme-pending-approvals \
   --attribute-definitions \
     AttributeName=requestId,AttributeType=S \
     AttributeName=status,AttributeType=S \
@@ -278,7 +278,7 @@ aws dynamodb create-table \
     "Projection": {"ProjectionType": "ALL"}
   }]' \
   --billing-mode PAY_PER_REQUEST \
- || echo "Table tazco-pending-approvals may already exist"
+ || echo "Table acme-pending-approvals may already exist"
 
 echo "=== DynamoDB Tables Created ==="
 
@@ -288,7 +288,7 @@ echo "=== Creating Cognito User Pool ==="
 POOL_RESULT=$(aws cognito-idp create-user-pool \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --pool-name tazco-financial-pool \
+  --pool-name acme-financial-pool \
   --schema '[
     {"Name": "email", "Required": true, "Mutable": true},
     {"Name": "custom:role", "AttributeDataType": "String", "Mutable": true},
@@ -309,7 +309,7 @@ if [ -n "$POOL_ID" ]; then
     --endpoint-url $ENDPOINT \
     --region $REGION \
     --user-pool-id $POOL_ID \
-    --client-name tazco-api-client \
+    --client-name acme-api-client \
     --explicit-auth-flows ADMIN_NO_SRP_AUTH ALLOW_USER_PASSWORD_AUTH ALLOW_REFRESH_TOKEN_AUTH \
    2>&1)
 
@@ -322,7 +322,7 @@ if [ -n "$POOL_ID" ]; then
     aws ssm put-parameter \
       --endpoint-url $ENDPOINT \
       --region $REGION \
-      --name /tazco/financial-api/cognito/userPoolId \
+      --name /acme/financial-api/cognito/userPoolId \
       --value "$POOL_ID" \
       --type String \
       --overwrite \
@@ -331,7 +331,7 @@ if [ -n "$POOL_ID" ]; then
     aws ssm put-parameter \
       --endpoint-url $ENDPOINT \
       --region $REGION \
-      --name /tazco/financial-api/cognito/clientId \
+      --name /acme/financial-api/cognito/clientId \
       --value "$CLIENT_ID" \
       --type String \
       --overwrite \
@@ -397,7 +397,7 @@ echo "=== Creating EventBridge Event Bus ==="
 aws events create-event-bus \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --name tazco-financial-events \
+  --name acme-financial-events \
  || echo "Event bus may already exist"
 
 echo "=== Creating SQS Queue ==="
@@ -405,25 +405,25 @@ echo "=== Creating SQS Queue ==="
 aws sqs create-queue \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --queue-name tazco-events-queue \
+  --queue-name acme-events-queue \
  || echo "Queue may already exist"
 
 # Create EventBridge rule to send to SQS
-QUEUE_ARN="arn:aws:sqs:${REGION}:000000000000:tazco-events-queue"
+QUEUE_ARN="arn:aws:sqs:${REGION}:000000000000:acme-events-queue"
 
 aws events put-rule \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --name tazco-events-to-sqs \
-  --event-bus-name tazco-financial-events \
-  --event-pattern '{"source": ["tazco.financial-api"]}' \
+  --name acme-events-to-sqs \
+  --event-bus-name acme-financial-events \
+  --event-pattern '{"source": ["acme.financial-api"]}' \
  || echo "Rule may already exist"
 
 aws events put-targets \
   --endpoint-url $ENDPOINT \
   --region $REGION \
-  --rule tazco-events-to-sqs \
-  --event-bus-name tazco-financial-events \
+  --rule acme-events-to-sqs \
+  --event-bus-name acme-financial-events \
   --targets "Id=sqs-target,Arn=${QUEUE_ARN}" \
  || echo "Target may already exist"
 
@@ -431,47 +431,47 @@ echo "=== Creating SSM Parameters ==="
 
 # Limits configuration
 aws ssm put-parameter --endpoint-url "$ENDPOINT" --region "$REGION" \
-  --name /tazco/financial-api/limits/lowTier --value "500" --type String --overwrite \
- || echo "Failed to write /tazco/financial-api/limits/lowTier"
+  --name /acme/financial-api/limits/lowTier --value "500" --type String --overwrite \
+ || echo "Failed to write /acme/financial-api/limits/lowTier"
 aws ssm put-parameter --endpoint-url "$ENDPOINT" --region "$REGION" \
-  --name /tazco/financial-api/limits/mediumTier --value "1500" --type String --overwrite \
- || echo "Failed to write /tazco/financial-api/limits/mediumTier"
+  --name /acme/financial-api/limits/mediumTier --value "1500" --type String --overwrite \
+ || echo "Failed to write /acme/financial-api/limits/mediumTier"
 aws ssm put-parameter --endpoint-url "$ENDPOINT" --region "$REGION" \
-  --name /tazco/financial-api/limits/highTier --value "3000" --type String --overwrite \
- || echo "Failed to write /tazco/financial-api/limits/highTier"
+  --name /acme/financial-api/limits/highTier --value "3000" --type String --overwrite \
+ || echo "Failed to write /acme/financial-api/limits/highTier"
 
 # Approval configuration
 aws ssm put-parameter --endpoint-url "$ENDPOINT" --region "$REGION" \
-  --name /tazco/financial-api/approval/autoApproveThreshold --value "700" --type String --overwrite \
- || echo "Failed to write /tazco/financial-api/approval/autoApproveThreshold"
+  --name /acme/financial-api/approval/autoApproveThreshold --value "700" --type String --overwrite \
+ || echo "Failed to write /acme/financial-api/approval/autoApproveThreshold"
 
 # WhatsApp configuration
 aws ssm put-parameter --endpoint-url "$ENDPOINT" --region "$REGION" \
-  --name /tazco/financial-api/whatsapp/notificationsEnabled --value "true" --type String --overwrite \
- || echo "Failed to write /tazco/financial-api/whatsapp/notificationsEnabled"
+  --name /acme/financial-api/whatsapp/notificationsEnabled --value "true" --type String --overwrite \
+ || echo "Failed to write /acme/financial-api/whatsapp/notificationsEnabled"
 aws ssm put-parameter --endpoint-url "$ENDPOINT" --region "$REGION" \
-  --name /tazco/financial-api/whatsapp/approvalExpiryHours --value "24" --type String --overwrite \
- || echo "Failed to write /tazco/financial-api/whatsapp/approvalExpiryHours"
+  --name /acme/financial-api/whatsapp/approvalExpiryHours --value "24" --type String --overwrite \
+ || echo "Failed to write /acme/financial-api/whatsapp/approvalExpiryHours"
 
 # Scoring configuration
 aws ssm put-parameter --endpoint-url "$ENDPOINT" --region "$REGION" \
-  --name /tazco/financial-api/scoring/paymentBonusMax --value "50" --type String --overwrite \
- || echo "Failed to write /tazco/financial-api/scoring/paymentBonusMax"
+  --name /acme/financial-api/scoring/paymentBonusMax --value "50" --type String --overwrite \
+ || echo "Failed to write /acme/financial-api/scoring/paymentBonusMax"
 aws ssm put-parameter --endpoint-url "$ENDPOINT" --region "$REGION" \
-  --name /tazco/financial-api/scoring/paymentBonusMin --value "10" --type String --overwrite \
- || echo "Failed to write /tazco/financial-api/scoring/paymentBonusMin"
+  --name /acme/financial-api/scoring/paymentBonusMin --value "10" --type String --overwrite \
+ || echo "Failed to write /acme/financial-api/scoring/paymentBonusMin"
 aws ssm put-parameter --endpoint-url "$ENDPOINT" --region "$REGION" \
-  --name /tazco/financial-api/scoring/latePenaltyMild --value "20" --type String --overwrite \
- || echo "Failed to write /tazco/financial-api/scoring/latePenaltyMild"
+  --name /acme/financial-api/scoring/latePenaltyMild --value "20" --type String --overwrite \
+ || echo "Failed to write /acme/financial-api/scoring/latePenaltyMild"
 aws ssm put-parameter --endpoint-url "$ENDPOINT" --region "$REGION" \
-  --name /tazco/financial-api/scoring/latePenaltyModerate --value "50" --type String --overwrite \
- || echo "Failed to write /tazco/financial-api/scoring/latePenaltyModerate"
+  --name /acme/financial-api/scoring/latePenaltyModerate --value "50" --type String --overwrite \
+ || echo "Failed to write /acme/financial-api/scoring/latePenaltyModerate"
 aws ssm put-parameter --endpoint-url "$ENDPOINT" --region "$REGION" \
-  --name /tazco/financial-api/scoring/latePenaltySevere --value "100" --type String --overwrite \
- || echo "Failed to write /tazco/financial-api/scoring/latePenaltySevere"
+  --name /acme/financial-api/scoring/latePenaltySevere --value "100" --type String --overwrite \
+ || echo "Failed to write /acme/financial-api/scoring/latePenaltySevere"
 
 echo "=== LocalStack Initialization Complete ==="
 echo "Tables: 12 DynamoDB tables created"
 echo "Auth: Cognito user pool with 2 test users (admin@test.com, user@test.com)"
 echo "Events: EventBridge bus + SQS queue"
-echo "Config: SSM parameters under /tazco/financial-api/"
+echo "Config: SSM parameters under /acme/financial-api/"

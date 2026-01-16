@@ -82,7 +82,7 @@ emulator-stop:
 # Run integration tests against Firestore emulator
 test-firestore: emulator-start
 	@echo "==> Running Firestore integration tests..."
-	FIRESTORE_EMULATOR_HOST=localhost:8080 GCLOUD_PROJECT=demo-tazco $(BUN) test tests/integration
+	FIRESTORE_EMULATOR_HOST=localhost:8080 GCLOUD_PROJECT=demo-acme $(BUN) test tests/integration
 	@echo "==> Stopping emulators..."
 	$(MAKE) emulator-stop
 

@@ -72,7 +72,7 @@ describe('WhatsApp Configuration', () => {
     it('should use default session name if not provided', () => {
       const config = loadWhatsAppConfig();
 
-      expect(config.wppSessionName).toBe('tazco-financial-api');
+      expect(config.wppSessionName).toBe('acme-financial-api');
     });
 
     it('should default notificationsEnabled to true', () => {

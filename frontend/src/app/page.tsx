@@ -40,7 +40,7 @@ export default function Home() {
     <div className="flex min-h-dvh items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-semibold tracking-tight">Tazco Financial</CardTitle>
+          <CardTitle className="text-2xl font-semibold tracking-tight">ACME Financial</CardTitle>
           <CardDescription>Dev mode — switch between User and Admin</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">

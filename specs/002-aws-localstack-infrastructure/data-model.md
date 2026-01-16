@@ -22,7 +22,7 @@ This data model mirrors what the code currently persists:
 
 ## Table Definitions (12)
 
-### 1) `tazco-users`
+### 1) `acme-users`
 
 **Key schema**
 - PK: `ecosystemId` (S)
@@ -46,7 +46,7 @@ This data model mirrors what the code currently persists:
 
 ---
 
-### 2) `tazco-scores`
+### 2) `acme-scores`
 
 **Key schema**
 - PK: `ecosystemId` (S)
@@ -65,7 +65,7 @@ This data model mirrors what the code currently persists:
 
 ---
 
-### 3) `tazco-cards`
+### 3) `acme-cards`
 
 **Key schema**
 - PK: `ecosystemId` (S)
@@ -94,7 +94,7 @@ This data model mirrors what the code currently persists:
 
 ---
 
-### 4) `tazco-card-requests`
+### 4) `acme-card-requests`
 
 **Key schema**
 - PK: `ecosystemId` (S)
@@ -124,7 +124,7 @@ This data model mirrors what the code currently persists:
 
 ---
 
-### 5) `tazco-transactions`
+### 5) `acme-transactions`
 
 **Key schema**
 - PK: `ecosystemIdCardId` (S) = `${ecosystemId}#${cardId}`
@@ -147,7 +147,7 @@ This data model mirrors what the code currently persists:
 
 ---
 
-### 6) `tazco-idempotency`
+### 6) `acme-idempotency`
 
 **Key schema**
 - PK: `ecosystemId` (S)
@@ -165,7 +165,7 @@ This data model mirrors what the code currently persists:
 
 ---
 
-### 7) `tazco-outbox`
+### 7) `acme-outbox`
 
 **Key schema**
 - PK: `eventId` (S)
@@ -192,7 +192,7 @@ This data model mirrors what the code currently persists:
 
 ---
 
-### 8) `tazco-outbox-sequences`
+### 8) `acme-outbox-sequences`
 
 **Key schema**
 - PK: `sequenceId` (S) (hash of entity key, e.g., `${ecosystemId}:${entityType}:${entityId}`)
@@ -207,7 +207,7 @@ This data model mirrors what the code currently persists:
 
 ---
 
-### 9) `tazco-audit-logs`
+### 9) `acme-audit-logs`
 
 **Key schema**
 - PK: `targetKey` (S) = `${targetType}#${targetId}`
@@ -228,7 +228,7 @@ This data model mirrors what the code currently persists:
 
 ---
 
-### 10) `tazco-whatsapp-notifications`
+### 10) `acme-whatsapp-notifications`
 
 **Key schema**
 - PK: `notificationId` (S)
@@ -257,7 +257,7 @@ This data model mirrors what the code currently persists:
 
 ---
 
-### 11) `tazco-whatsapp-inbound`
+### 11) `acme-whatsapp-inbound`
 
 **Key schema**
 - PK: `messageId` (S)
@@ -283,7 +283,7 @@ This data model mirrors what the code currently persists:
 
 ---
 
-### 12) `tazco-pending-approvals`
+### 12) `acme-pending-approvals`
 
 **Key schema**
 - PK: `requestId` (S)

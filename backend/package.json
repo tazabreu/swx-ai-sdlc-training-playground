@@ -1,11 +1,11 @@
 {
-  "name": "@tazco/backend",
+  "name": "@acme/backend",
   "version": "1.0.0",
   "description": "Headless Financial API - credit card management, scoring, and payment simulation",
   "main": "dist/functions/http.js",
   "type": "module",
   "scripts": {
-    "dev": "bun run scripts/start-dev.ts aws",
+    "dev": "bun run scripts/start-dev.ts in-memory",
     "dev:in-memory": "bun run scripts/start-dev.ts in-memory",
     "dev:emulator": "bun run scripts/start-dev.ts emulator",
     "dev:cloud": "bun run scripts/start-dev.ts cloud",
@@ -20,10 +20,10 @@
     "test:ci": "bun test --coverage",
     "test:integration": "bun test tests/integration/infrastructure tests/integration/backends/inmemory",
     "test:integration:inmemory": "bun test tests/integration/backends/inmemory",
-    "test:integration:firestore": "FIRESTORE_EMULATOR_HOST=localhost:8080 GCLOUD_PROJECT=demo-tazco bun test tests/integration/backends/firestore tests/integration/firestore",
+    "test:integration:firestore": "FIRESTORE_EMULATOR_HOST=localhost:8080 GCLOUD_PROJECT=demo-acme bun test tests/integration/backends/firestore tests/integration/firestore",
     "test:integration:dynamodb": "USE_AWS=true AWS_ENDPOINT_URL=http://localhost:4566 AWS_REGION=us-east-1 AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test bun test tests/integration/backends/dynamodb",
     "test:integration:all": "bun run test:integration:inmemory && bun run test:integration:firestore && bun run test:integration:dynamodb",
-    "test:firestore": "FIRESTORE_EMULATOR_HOST=localhost:8080 GCLOUD_PROJECT=demo-tazco bun test tests/integration",
+    "test:firestore": "FIRESTORE_EMULATOR_HOST=localhost:8080 GCLOUD_PROJECT=demo-acme bun test tests/integration",
     "test:aws": "USE_AWS=true AWS_ENDPOINT_URL=http://localhost:4566 AWS_REGION=us-east-1 AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test bun test tests/contract tests/integration/backends/dynamodb",
     "lint": "eslint src/ tests/",
     "lint:fix": "eslint src/ tests/ --fix",
@@ -44,13 +44,13 @@
     "deploy:indexes": "firebase deploy --only firestore:indexes --project $FIREBASE_PROJECT_DEV"
   },
   "keywords": [
-    "tazco",
+    "acme",
     "financial",
     "api",
     "firebase",
     "serverless"
   ],
-  "author": "Tazco Platform Team",
+  "author": "ACME Platform Team",
   "license": "UNLICENSED",
   "private": true,
   "devDependencies": {
@@ -60,6 +60,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
+    "bun-types": "1.3.6",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.2.0",

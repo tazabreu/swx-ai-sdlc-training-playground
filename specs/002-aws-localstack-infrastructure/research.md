@@ -57,18 +57,18 @@ Use single-table design per entity type with composite keys and Global Secondary
 
 | Table | Partition Key (PK) | Sort Key (SK) | GSIs |
 |-------|-------------------|---------------|------|
-| tazco-users | ecosystemId | - | UserByFirebaseUid (firebaseUid) |
-| tazco-cards | ecosystemId | cardId | CardsByStatus (ecosystemId, status) |
-| tazco-card-requests | ecosystemId | requestId | PendingRequests (status, createdAt) |
-| tazco-transactions | ecosystemId#cardId | transactionId | - |
-| tazco-scores | ecosystemId | timestamp#scoreId | - |
-| tazco-idempotency | ecosystemId | keyHash | TTL on expiresAt |
-| tazco-outbox | eventId | - | PendingEvents (status, createdAt) |
-| tazco-outbox-sequences | entityKey | - | - |
-| tazco-audit-logs | targetType#targetId | timestamp#logId | LogsByActor (actorId, timestamp) |
-| tazco-whatsapp-notifications | notificationId | - | PendingNotifications, ByRelatedEntity |
-| tazco-whatsapp-inbound | messageId | - | ByWppMessageId, BySenderPhone |
-| tazco-pending-approvals | requestId | - | ExpiredApprovals (status, expiresAt) |
+| acme-users | ecosystemId | - | UserByFirebaseUid (firebaseUid) |
+| acme-cards | ecosystemId | cardId | CardsByStatus (ecosystemId, status) |
+| acme-card-requests | ecosystemId | requestId | PendingRequests (status, createdAt) |
+| acme-transactions | ecosystemId#cardId | transactionId | - |
+| acme-scores | ecosystemId | timestamp#scoreId | - |
+| acme-idempotency | ecosystemId | keyHash | TTL on expiresAt |
+| acme-outbox | eventId | - | PendingEvents (status, createdAt) |
+| acme-outbox-sequences | entityKey | - | - |
+| acme-audit-logs | targetType#targetId | timestamp#logId | LogsByActor (actorId, timestamp) |
+| acme-whatsapp-notifications | notificationId | - | PendingNotifications, ByRelatedEntity |
+| acme-whatsapp-inbound | messageId | - | ByWppMessageId, BySenderPhone |
+| acme-pending-approvals | requestId | - | ExpiredApprovals (status, expiresAt) |
 
 ### Alternatives Considered
 | Alternative | Why Rejected |
@@ -250,8 +250,8 @@ import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge
 async publish(event: OutboxEvent): Promise<void> {
   const command = new PutEventsCommand({
     Entries: [{
-      EventBusName: 'tazco-financial-events',
-      Source: 'tazco.financial-api',
+      EventBusName: 'acme-financial-events',
+      Source: 'acme.financial-api',
       DetailType: event.eventType,
       Detail: JSON.stringify({
         eventId: event.id,
@@ -273,7 +273,7 @@ async publish(event: OutboxEvent): Promise<void> {
 ## 8. SSM Parameter Store Configuration
 
 ### Decision
-Use SSM Parameter Store with `/tazco/financial-api/` path prefix for configuration.
+Use SSM Parameter Store with `/acme/financial-api/` path prefix for configuration.
 
 ### Rationale
 - Free tier (no cost for standard parameters)
@@ -283,13 +283,13 @@ Use SSM Parameter Store with `/tazco/financial-api/` path prefix for configurati
 
 ### Parameter Structure
 ```
-/tazco/financial-api/limits/lowTier = 500
-/tazco/financial-api/limits/mediumTier = 1500
-/tazco/financial-api/limits/highTier = 3000
-/tazco/financial-api/approval/autoApproveThreshold = 700
-/tazco/financial-api/whatsapp/notificationsEnabled = true
-/tazco/financial-api/whatsapp/approvalExpiryHours = 24
-/tazco/financial-api/scoring/paymentBonusMax = 50
+/acme/financial-api/limits/lowTier = 500
+/acme/financial-api/limits/mediumTier = 1500
+/acme/financial-api/limits/highTier = 3000
+/acme/financial-api/approval/autoApproveThreshold = 700
+/acme/financial-api/whatsapp/notificationsEnabled = true
+/acme/financial-api/whatsapp/approvalExpiryHours = 24
+/acme/financial-api/scoring/paymentBonusMax = 50
 ...
 ```
 
@@ -299,7 +299,7 @@ import { SSMClient, GetParametersByPathCommand } from '@aws-sdk/client-ssm';
 
 async initialize(): Promise<void> {
   const command = new GetParametersByPathCommand({
-    Path: '/tazco/financial-api/',
+    Path: '/acme/financial-api/',
     Recursive: true,
     WithDecryption: true,
   });

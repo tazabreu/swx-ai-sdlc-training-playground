@@ -14,7 +14,7 @@ Runtime Docs Reviewed: ✅ README.md, ✅ AGENTS.md
 Deferred TODOs: None
 -->
 
-# Tazco Sample Financial Ecosystem Product Constitution
+# ACME Sample Financial Ecosystem Product Constitution
 
 ## Core Principles
 
@@ -47,7 +47,7 @@ consistency. Infrastructure changes are reviewable and reversible.
 
 ### III. Cross-Project Integration Transparency
 
-This product integrates with the Tazco platform across two GCP projects
+This product integrates with the ACME platform across two GCP projects
 (product project + platform project). All integration points MUST be
 explicitly documented:
 - Workload Identity Federation configuration

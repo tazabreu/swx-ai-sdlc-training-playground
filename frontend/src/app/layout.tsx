@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Tazco Financial',
+  title: 'ACME Financial',
   description: 'Credit card management and financial services',
 };
 

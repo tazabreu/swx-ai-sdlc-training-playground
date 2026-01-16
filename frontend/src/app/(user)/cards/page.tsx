@@ -169,7 +169,7 @@ export default function CardsPage() {
                       </span>
                       {/* Logo */}
                       <div className="absolute top-0 right-0">
-                        <span className="text-xs font-bold text-white/80 tracking-tight">TAZCO</span>
+                        <span className="text-xs font-bold text-white/80 tracking-tight">ACME</span>
                       </div>
                       <CreditCardChip />
                       <CreditCardServiceProvider type="Visa" className="brightness-0 invert opacity-80" />

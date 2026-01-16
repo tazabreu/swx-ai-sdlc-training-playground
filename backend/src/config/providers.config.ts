@@ -17,7 +17,7 @@ export interface ProviderConfig {
  */
 export function getProviderConfig(): ProviderConfig {
   const useInMemory = process.env.USE_INMEMORY !== 'false';
-  const firebaseProjectId = process.env.FIREBASE_PROJECT_ID ?? 'tazco-financial-dev';
+  const firebaseProjectId = process.env.FIREBASE_PROJECT_ID ?? 'acme-financial-dev';
   const nodeEnv = process.env.NODE_ENV ?? 'development';
 
   let environment: 'development' | 'test' | 'production';

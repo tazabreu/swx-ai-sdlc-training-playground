@@ -56,7 +56,7 @@ if (!(mode in modes)) {
 const config = modes[mode as Mode];
 
 // Banner
-console.log('\n🚀 Tazco Financial API');
+console.log('\n🚀 ACME Financial API');
 console.log('━'.repeat(60));
 console.log(`Mode: ${config.name}`);
 console.log('━'.repeat(60));

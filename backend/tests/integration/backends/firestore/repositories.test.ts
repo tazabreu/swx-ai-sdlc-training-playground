@@ -2,7 +2,7 @@
  * Firestore Backend Integration Tests
  *
  * Tests all repository implementations using the Firestore Emulator.
- * Requires: FIRESTORE_EMULATOR_HOST=localhost:8080 GCLOUD_PROJECT=demo-tazco
+ * Requires: FIRESTORE_EMULATOR_HOST=localhost:8080 GCLOUD_PROJECT=demo-acme
  *
  * These tests run against the Firebase Emulator and verify GCP/Firestore
  * backend behavior matches the expected repository contracts.

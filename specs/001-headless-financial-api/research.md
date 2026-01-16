@@ -232,7 +232,7 @@ import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 
 const sdk = new NodeSDK({
   resource: new Resource({
-    [SEMRESATTRS_SERVICE_NAME]: 'tazco-financial-api',
+    [SEMRESATTRS_SERVICE_NAME]: 'acme-financial-api',
     'cloud.platform': 'firebase-functions',
   }),
   spanProcessor: new BatchSpanProcessor(new TraceExporter(), {
@@ -374,7 +374,7 @@ describe('Card Request', () => {
 
 ### Decision: Stable Cross-Product Identifier
 
-**Rationale**: Enables unified user view across all Tazco products (credit card now, loans/savings later).
+**Rationale**: Enables unified user view across all ACME products (credit card now, loans/savings later).
 
 ```typescript
 interface User {

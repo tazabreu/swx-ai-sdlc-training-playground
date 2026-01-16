@@ -1,7 +1,7 @@
 services:
   firebase-emulators:
     image: andreysenov/firebase-tools:latest
-    container_name: tazco-firebase-emulators
+    container_name: acme-firebase-emulators
     ports:
       - "4000:4000"  # Emulator UI
       - "8080:8080"  # Firestore
@@ -12,9 +12,9 @@ services:
       - ./firestore.indexes.json:/home/node/firestore.indexes.json:ro
       - firebase-emulator-data:/home/node/data
     environment:
-      - FIREBASE_PROJECT=demo-tazco
-      - GCLOUD_PROJECT=demo-tazco
-    command: firebase emulators:start --project=demo-tazco --only auth,firestore
+      - FIREBASE_PROJECT=demo-acme
+      - GCLOUD_PROJECT=demo-acme
+    command: firebase emulators:start --project=demo-acme --only auth,firestore
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000"]
       interval: 10s
@@ -24,4 +24,4 @@ services:
 
 volumes:
   firebase-emulator-data:
-    name: tazco-firebase-data
+    name: acme-firebase-data

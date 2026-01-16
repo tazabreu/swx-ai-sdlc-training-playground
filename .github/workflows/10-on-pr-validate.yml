@@ -162,7 +162,7 @@ jobs:
         working-directory: backend
         env:
           FIRESTORE_EMULATOR_HOST: localhost:8080
-          GCLOUD_PROJECT: demo-tazco
+          GCLOUD_PROJECT: demo-acme
 
       - name: Stop emulator
         if: always()

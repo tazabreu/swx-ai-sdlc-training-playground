@@ -77,8 +77,8 @@ export class EventBridgeSQSPublisher implements IEventPublisher {
       endpoint: config.endpoint,
       publishToEventBridge: config.publishToEventBridge ?? true,
       eventBusName:
-        config.eventBusName ?? process.env.EVENTBRIDGE_BUS_NAME ?? 'tazco-financial-events',
-      eventSource: config.eventSource ?? process.env.EVENT_SOURCE ?? 'tazco.financial-api',
+        config.eventBusName ?? process.env.EVENTBRIDGE_BUS_NAME ?? 'acme-financial-events',
+      eventSource: config.eventSource ?? process.env.EVENT_SOURCE ?? 'acme.financial-api',
       publishToSqs: config.publishToSqs ?? false,
       sqsQueueUrl: config.sqsQueueUrl ?? process.env.SQS_QUEUE_URL,
       strict: config.strict ?? process.env.EVENT_PUBLISH_STRICT === 'true',

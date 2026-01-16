@@ -4,7 +4,7 @@
  * Tests the DI container with Firestore repositories against the emulator.
  * These tests mirror the InMemory container tests to ensure behavioral parity.
  *
- * Requires: FIRESTORE_EMULATOR_HOST=localhost:8080 GCLOUD_PROJECT=demo-tazco
+ * Requires: FIRESTORE_EMULATOR_HOST=localhost:8080 GCLOUD_PROJECT=demo-acme
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
