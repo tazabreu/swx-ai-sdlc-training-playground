@@ -186,10 +186,10 @@ export function requiresAttention(request: CardRequest): boolean {
 
 /**
  * Business rules constants
- * Note: COOLDOWN_DAYS_AFTER_REJECTION set to 0 for demo/testing. In production, set to 30.
+ * Note: COOLDOWN_DAYS_AFTER_REJECTION is intentionally enforced in all environments.
  */
 export const CARD_REQUEST_RULES = {
-  COOLDOWN_DAYS_AFTER_REJECTION: 0, // Set to 30 in production
+  COOLDOWN_DAYS_AFTER_REJECTION: 30,
   PENDING_ATTENTION_THRESHOLD_DAYS: 7,
   IDEMPOTENCY_KEY_MAX_LENGTH: 64,
 } as const;

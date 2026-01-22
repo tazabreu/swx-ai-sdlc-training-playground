@@ -2,7 +2,10 @@
   "name": "acme-financial-ecosystem",
   "version": "1.0.0",
   "private": true,
-  "workspaces": ["backend", "frontend"],
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
     "dev": "bun run --filter '*' dev",
     "dev:backend": "bun run --filter @acme/backend dev",
@@ -18,6 +21,8 @@
     "test:ci": "bun run --filter @acme/backend test:ci"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^25.0.9",
     "prettier": "^3.2.0",
     "typescript": "5.5.4"
   },
