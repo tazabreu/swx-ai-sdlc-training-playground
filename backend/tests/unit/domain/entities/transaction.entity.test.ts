@@ -234,13 +234,26 @@ describe('Transaction Entity', () => {
         expect(result.errors).toHaveLength(0);
       });
 
-      it('should fail for purchase without merchant', () => {
+      it('should fail for purchase with empty merchant', () => {
         const transaction = createPurchase({
           amount: 100,
           merchant: 'Store',
           idempotencyKey: 'key-123',
         });
         const invalidTx: Transaction = { ...transaction, merchant: '' };
+
+        const result = validateTransaction(invalidTx);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('merchant is required for purchases');
+      });
+
+      it('should fail for purchase with undefined merchant', () => {
+        const transaction = createPurchase({
+          amount: 100,
+          merchant: 'Store',
+          idempotencyKey: 'key-123',
+        });
+        const invalidTx: Transaction = { ...transaction, merchant: undefined };
 
         const result = validateTransaction(invalidTx);
         expect(result.valid).toBe(false);
