@@ -19,27 +19,58 @@ Users need the ability to switch between dark mode and light mode based on their
 
 1. **Given** a user is viewing the application in dark mode, **When** they click the theme toggle control, **Then** the entire UI switches to light mode with all colors, backgrounds, and text adapted appropriately
 2. **Given** a user is viewing the application in light mode, **When** they click the theme toggle control, **Then** the entire UI switches to dark mode with all colors, backgrounds, and text adapted appropriately
-3. **Given** a user toggles the theme, **When** they navigate to different pages within the application, **Then** the selected theme persists across all pages
 
 ---
 
-### User Story 2 - Persist Theme Selection (Priority: P2)
+### User Story 2 - Persist Theme Across Page Navigation (Priority: P2)
 
-Users expect their theme preference to be remembered across sessions. When they return to the application after closing their browser or on different devices, their theme choice should be restored automatically.
+Users expect that when they toggle the theme on one page, their selection remains active as they navigate to different pages within the application. The theme should not reset when moving between sections or features.
 
-**Why this priority**: This enhances user experience by eliminating repetitive actions. While users can still toggle themes manually (P1), persistence makes the feature more polished and user-friendly.
+**Why this priority**: This ensures consistency within a single session and prevents user frustration from having to re-select their theme on every page. It's essential for a coherent user experience.
 
-**Independent Test**: Can be tested by selecting a theme, closing the browser, reopening the application, and verifying the previously selected theme is automatically applied.
+**Independent Test**: Can be fully tested by selecting a theme on one page, navigating to multiple other pages, and verifying the theme remains consistent throughout the session.
 
 **Acceptance Scenarios**:
 
-1. **Given** a user has selected light mode, **When** they close and reopen the browser, **Then** the application loads in light mode
-2. **Given** a user has selected dark mode, **When** they refresh the page, **Then** the application remains in dark mode
-3. **Given** a user has never set a theme preference, **When** they first visit the application, **Then** the application displays in a default theme based on system preferences
+1. **Given** a user toggles to light mode on the dashboard, **When** they navigate to different pages within the application, **Then** the light mode theme persists across all pages
+2. **Given** a user toggles to dark mode on any page, **When** they use the browser back button, **Then** the dark mode theme remains active
+3. **Given** a user toggles the theme, **When** they open a new tab to the same application, **Then** the selected theme is applied in the new tab
 
 ---
 
-### User Story 3 - Smooth Theme Transition (Priority: P3)
+### User Story 3 - Detect System Theme Preference (Priority: P3)
+
+Users who have not yet set a theme preference should see the application automatically match their operating system's theme setting (light or dark mode). This provides a comfortable initial experience without requiring any action from the user.
+
+**Why this priority**: This delivers immediate value on first visit by respecting the user's existing preference at the OS level. It's the second most important story because it affects the first impression and reduces friction for new users.
+
+**Independent Test**: Can be fully tested by opening the application on a device with system dark mode enabled (and no stored preference) and verifying the app loads in dark mode, then testing with system light mode enabled.
+
+**Acceptance Scenarios**:
+
+1. **Given** a user has never set a theme preference and has system dark mode enabled, **When** they first visit the application, **Then** the application displays in dark mode
+2. **Given** a user has never set a theme preference and has system light mode enabled, **When** they first visit the application, **Then** the application displays in light mode
+3. **Given** a user has system dark mode enabled but has previously selected light mode, **When** they visit the application, **Then** the application displays in light mode (user preference overrides system preference)
+
+---
+
+### User Story 4 - Persist Theme Selection Across Sessions (Priority: P4)
+
+Users expect their manually selected theme preference to be remembered across sessions. When they return to the application after closing their browser, their theme choice should be restored automatically.
+
+**Why this priority**: This enhances user experience by eliminating repetitive actions. While users can still toggle themes manually (P1), navigate consistently (P2), and get sensible defaults from system preferences (P3), persistence makes the feature more polished and user-friendly.
+
+**Independent Test**: Can be tested by manually selecting a theme different from the system preference, closing the browser, reopening the application, and verifying the manually selected theme is automatically applied.
+
+**Acceptance Scenarios**:
+
+1. **Given** a user has manually selected light mode, **When** they close and reopen the browser, **Then** the application loads in light mode regardless of system preference
+2. **Given** a user has manually selected dark mode, **When** they refresh the page, **Then** the application remains in dark mode
+3. **Given** a user clears their browser storage after setting a preference, **When** they visit the application, **Then** the application falls back to system preference detection
+
+---
+
+### User Story 5 - Smooth Theme Transition (Priority: P5)
 
 Users should experience a smooth visual transition when switching themes, avoiding jarring flashes or abrupt color changes that could be disorienting or uncomfortable.
 
