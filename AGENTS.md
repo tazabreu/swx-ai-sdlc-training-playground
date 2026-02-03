@@ -78,6 +78,21 @@ Example:
 .- ClusterIP service on port 80
 ```
 
+## Development Principles
+
+### Testing and Coverage Requirements
+
+**Before committing or pushing code to upstream:**
+
+- **ALWAYS** run tests locally to ensure they pass
+- **ENSURE** code coverage is >80% on the files you've modified
+- Use the appropriate test commands for your changes:
+  - Backend: `npm run test` (from backend directory or `npm test` from root)
+  - Frontend: `npm run test` (from frontend directory)
+  - Check coverage reports to verify you meet the 80% threshold
+
+This principle helps maintain code quality and prevents introducing regressions into the main codebase.
+
 ## Development Commands
 
 ### Backend Development
